@@ -199,14 +199,16 @@
   .lobby-col { display: flex; flex-direction: column; gap: 1.6rem; min-width: 0; }
   .chips { display: flex; flex-wrap: wrap; gap: .6rem; }
   .name-chip {
-    min-height: 3.25rem; padding: .6rem 1.35rem; border: 0; border-radius: 999px;
-    background: linear-gradient(180deg, #fff, var(--ivory) 60%); color: var(--ink); font-weight: 800; font-size: 1.12rem; cursor: pointer;
-    box-shadow: 0 .25rem 0 rgba(0, 0, 0, .45);
+    display: inline-flex; align-items: center; padding: .3rem .95rem; border-radius: 999px;
+    border: 1px solid var(--line-strong); background: rgba(251, 243, 223, .08); font-weight: 800; font-size: 1rem;
     max-width: 100%; overflow-wrap: anywhere;
-    transition: transform .08s ease, background-color .08s ease;
   }
-  .name-chip:active:not(:disabled) { transform: translateY(.18rem); box-shadow: 0 .07rem 0 rgba(0, 0, 0, .45); }
-  .name-chip.spot { background: var(--gold); transform: scale(1.08); box-shadow: 0 0 0 .3rem rgba(242, 192, 74, .35), 0 .25rem 0 rgba(0, 0, 0, .45); }
+  .spin-next { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; }
+  .pick { display: flex; flex-direction: column; align-items: center; gap: 1.1rem; text-align: center; }
+  .pick .back { align-self: flex-start; }
+  .pick h1 { font-size: clamp(2.2rem, 9vmin, 4rem); }
+  .pick .wheel { width: min(100%, clamp(15rem, min(88vw, 50vh), 34rem)); }
+  .pick .wheel-svg text { text-transform: uppercase; }
   .roster-acts { display: flex; flex-wrap: wrap; gap: .6rem; }
   .add { display: flex; gap: .6rem; }
   .add input {
@@ -1097,6 +1099,7 @@
 
   // What the announcer says. Short, warm, a little cheeky.
   const lines = {
+    pickOpen: () => oneOf(['Who’s next? Spin the wheel.', 'Let’s see who’s up next. Spin it!', 'Next player. The wheel decides.']),
     turn: n => oneOf([`${n}! Pera... o kapalaran?`, `${n}, come on down! Pera... o kapalaran?`, `Next up, ${n}. One question. Pera... o kapalaran?`]),
     pera: n => oneOf([`Pera! Smart. Boring... but smart. RJ, three hundred pesos for ${n}, please.`, `${n} takes the money and runs! Three hundred pesos. RJ, pay up.`, `Pera it is. Three hundred pesos, safe and sound. Wise choice, ${n}.`]),
     fate: n => oneOf([`Kapalaran! Brave. Let's see what fate thinks of ${n}.`, `Kapalaran! Give those dice a good shake, ${n}.`, `Kapalaran it is! No take-backs now.`]),
@@ -1235,6 +1238,28 @@
   /* ---- the roulette wheel ---- */
   const WEDGE = { 1000: ['var(--ruby)', '#fff'], 0: ['var(--coal)', 'var(--muted)'], 100: ['var(--green)', '#fff'], bag: ['var(--gold)', 'var(--ink)'], 20: ['var(--ivory)', 'var(--ink)'], 500: ['var(--blue)', '#fff'], 50: ['var(--orange)', '#fff'] };
   const restAngle = w => { const a = 360 / w.slots.length; return -(w.slots.indexOf(w.won) + 0.5 + (w.j || 0)) * a; };
+  const wheelFrame = (inner, rot, label) => `<svg class="wheel-svg" viewBox="-114 -120 228 236" role="img" aria-label="${esc(label)}">
+      <circle r="110" fill="var(--wood)"/><circle r="107" fill="none" stroke="var(--gold)" stroke-width="3"/>
+      <g class="wheel-rot" style="transform:rotate(${rot}deg)">${inner}</g>
+      <g class="wheel-hub"><circle r="18" fill="var(--gold)" stroke="var(--gold-deep)" stroke-width="2.5"/><path transform="translate(-12 -12)" fill="var(--ink)" d="M12 2l2.47 6.6 7.04.31-5.52 4.39 1.89 6.79L12 16.2l-5.88 3.89 1.89-6.79-5.52-4.39 7.04-.31z"/></g>
+      <path class="wheel-pin" d="M-11 -118h22L0 -92z" fill="var(--ruby)" stroke="var(--gold-light)" stroke-width="2.5" stroke-linejoin="round"/>
+    </svg>`;
+  /** A wheel of names: equal wedges, each name written from the hub out to the rim. */
+  function nameWheelSVG(names, rot) {
+    const n = names.length, a = 360 / n, R = 100;
+    const pt = (deg, r) => { const t = (deg - 90) * Math.PI / 180; return `${(r * Math.cos(t)).toFixed(2)} ${(r * Math.sin(t)).toFixed(2)}`; };
+    const hues = [['var(--ruby)', '#fff'], ['var(--green)', '#fff'], ['var(--blue)', '#fff'], ['var(--orange)', '#fff'], ['var(--violet)', '#fff']];
+    const wedges = names.map((name, i) => {
+      let [fill, ink] = hues[i % hues.length];
+      if (n > 1 && i === n - 1 && i % hues.length === 0) [fill, ink] = ['var(--ivory)', 'var(--ink)'];   // never the same colour as its neighbour
+      const shape = n === 1 ? `<circle r="${R}" fill="${fill}"/>` : `<path d="M0 0L${pt(i * a, R)}A${R} ${R} 0 ${a > 180 ? 1 : 0} 1 ${pt((i + 1) * a, R)}Z" fill="${fill}" stroke="rgba(0,0,0,.35)" stroke-width="1"/>`;
+      const shown = name.length > 16 ? name.slice(0, 15) + '…' : name;
+      const size = Math.min(n > 12 ? 11 : n > 8 ? 13.5 : n > 4 ? 17 : 21, 64 / (shown.length * 0.5)).toFixed(1);
+      return `<g class="wedge">${shape}<text transform="rotate(${((i + 0.5) * a - 90).toFixed(2)})" x="93" text-anchor="end" dominant-baseline="central" font-size="${size}" fill="${ink}">${esc(shown)}</text></g>`;
+    }).join('');
+    const pegs = n > 1 ? names.map((x, i) => { const [cx, cy] = pt(i * a, 96).split(' '); return `<circle cx="${cx}" cy="${cy}" r="3.2" fill="var(--gold-light)"/>`; }).join('') : '';
+    return wheelFrame(wedges + pegs, rot, 'Wheel of names: ' + names.join(', '));
+  }
   function wheelSVG(slots, rot, won) {
     const n = slots.length, a = 360 / n, R = 100;
     const pt = (deg, r) => { const t = (deg - 90) * Math.PI / 180; return `${(r * Math.cos(t)).toFixed(2)} ${(r * Math.sin(t)).toFixed(2)}`; };
@@ -1245,12 +1270,7 @@
       return `<g class="wedge${won === s ? ' won' : ''}">${shape}<text transform="rotate(${((i + 0.5) * a).toFixed(2)}) translate(0 -64)" text-anchor="middle" dominant-baseline="middle" font-size="${size}" fill="${ink}">${s === BAGWIN ? 'JACKPOT' : peso(s)}</text></g>`;
     }).join('');
     const pegs = n > 1 ? slots.map((s, i) => { const [x, y] = pt(i * a, 96).split(' '); return `<circle cx="${x}" cy="${y}" r="3.2" fill="var(--gold-light)"/>`; }).join('') : '';
-    return `<svg class="wheel-svg" viewBox="-114 -120 228 236" role="img" aria-label="Roulette wheel: ${slots.map(prizeLabel).join(', ')}">
-      <circle r="110" fill="var(--wood)"/><circle r="107" fill="none" stroke="var(--gold)" stroke-width="3"/>
-      <g class="wheel-rot" style="transform:rotate(${rot}deg)">${wedges}${pegs}</g>
-      <g class="wheel-hub"><circle r="18" fill="var(--gold)" stroke="var(--gold-deep)" stroke-width="2.5"/><path transform="translate(-12 -12)" fill="var(--ink)" d="M12 2l2.47 6.6 7.04.31-5.52 4.39 1.89 6.79L12 16.2l-5.88 3.89 1.89-6.79-5.52-4.39 7.04-.31z"/></g>
-      <path class="wheel-pin" d="M-11 -118h22L0 -92z" fill="var(--ruby)" stroke="var(--gold-light)" stroke-width="2.5" stroke-linejoin="round"/>
-    </svg>`;
+    return wheelFrame(wedges + pegs, rot, 'Roulette wheel: ' + slots.map(prizeLabel).join(', '));
   }
   function wheelWrapHTML(p, done) {
     return `<div class="wheel-wrap${done ? ' still' : ''}">
@@ -1295,12 +1315,14 @@
     if (f) {
       next = '<p class="note">The dice are closed. The show has ended.</p>';
     } else {
-      const chips = waiting.map(p => `<button class="name-chip" data-action="turn" data-id="${p.id}"${dis}>${esc(p.name)}</button>`).join('');
+      const chips = waiting.map(p => `<span class="name-chip">${esc(p.name)}</span>`).join('');
       const hint = !P.length
-        ? '<p class="note">Nobody’s on the list yet. Add everyone who’s playing, then tap a name to call them up.</p>'
+        ? '<p class="note">Nobody’s on the list yet. Add everyone who’s playing, then spin to see who goes first.</p>'
         : (!waiting.length ? '<p class="note">Everyone on the list has played. Add a name if someone’s missing.</p>' : '');
-      next = `${chips ? `<div class="chips">${chips}</div>` : ''}${hint}
-        ${waiting.length > 1 ? `<div class="roster-acts"><button class="btn quiet" data-action="pick"${dis}>Pick someone for me</button></div>` : ''}
+      const spinNext = waiting.length
+        ? `<div class="spin-next"><button class="btn primary big" data-action="pick"${dis}>${waiting.length > 1 ? 'Spin for the next player' : `Last up: ${esc(waiting[0].name)}`}</button>
+            ${waiting.length > 1 ? '<p class="fine">The wheel decides the order, so everyone has the same chance at the roulette prizes.</p>' : ''}</div>` : '';
+      next = `${spinNext}${chips ? `<div class="chips">${chips}</div>` : ''}${hint}
         <form id="add-form" class="add" novalidate>
           <label class="sr" for="new-name">Name to add</label>
           <input id="new-name" name="name" type="text" maxlength="600" placeholder="Add a name, or several with commas" autocomplete="off" autocapitalize="words" enterkeyhint="done"${dis}>
@@ -1349,7 +1371,7 @@
       const what = p.status === 'waiting' ? 'Hasn’t played' : p.status === 'kept' ? `Took the ${peso(STAKE)}` : `Rolled ${peso(p.total)}${wonBag(p) ? ' + Mystery Bag' : ''}`;
       const lock = f || locked ? ' disabled' : '';
       return `<li><span class="m-name"><b>${esc(p.name)}</b><small>${what}</small></span><span class="m-acts">
-        ${p.status !== 'waiting' ? `<button class="btn quiet" data-action="redo" data-id="${p.id}" data-confirm="Tap again to clear this turn"${lock}>Redo turn</button>` : ''}
+        ${p.status !== 'waiting' ? `<button class="btn quiet" data-action="redo" data-id="${p.id}" data-confirm="Tap again to clear this turn"${lock}>Redo turn</button>` : `<button class="btn quiet" data-action="turn" data-id="${p.id}"${lock}>Call up</button>`}
         <button class="btn quiet" data-action="remove" data-id="${p.id}" data-confirm="Tap again to remove"${lock}>Remove</button>
       </span></li>`;
     }).join('');
@@ -1408,7 +1430,7 @@
           <div><button class="btn quiet" data-action="clear-results" data-confirm="Tap again to clear all results"${dis}>Clear results, keep the names</button></div></div>` : '';
 
     return `<div class="hero"><span class="lantern">${PAROL}</span>${logoHTML()}<span class="lantern b">${PAROL}</span></div>
-      <p class="lede">The Rivera Christmas special. ${peso(STAKE)} with your name on it, or three dice that pay ${peso(MIN_TOTAL)} to ${peso(MAX_TOTAL)}.</p>
+      <p class="lede">The Rivera Christmas special. ${peso(STAKE)} cash in your hand, or three dice that pay ${peso(MIN_TOTAL)} to ${peso(MAX_TOTAL)}.</p>
       ${opener}${staleBox}
       <div class="lobby">
         <div class="lobby-col">
@@ -1418,6 +1440,17 @@
         <section class="sec"><h2>The record</h2>${record}</section>
       </div>
       ${host}`;
+  }
+
+  function viewPick() {
+    const waiting = state.players.filter(p => p.status === 'waiting');
+    return `<section class="pick">
+      <button class="back" data-action="home">‹ The record</button>
+      <h1>Who’s next?</h1>
+      <div class="wheel ready" data-action="pick-spin">${nameWheelSVG(waiting.map(p => p.name), 0)}</div>
+      <button class="btn primary big" data-action="pick-spin">${phoneOn() ? 'Spin, or flick the phone' : 'Spin the wheel'}</button>
+      <p class="fine">${waiting.length} still to play. Every name has the same chance.</p>
+    </section>`;
   }
 
   function viewChoice(p) {
@@ -1431,7 +1464,7 @@
         <div class="door">
           <div class="door-art"><div class="bill" aria-hidden="true"><small>Pamasko</small>${peso(STAKE)}</div></div>
           <h2>Pera</h2>
-          <p>Take the ${peso(STAKE)}. RJ hands it over right now.</p>
+          <p>Take ${peso(STAKE)} cash. RJ hands it over right now.</p>
           <button class="btn ghost big wide" data-action="keep" data-id="${p.id}" data-confirm="Final answer? Tap again for Pera">Pera</button>
         </div>
         <div class="door fate">
@@ -1588,12 +1621,14 @@
     if (route.name === 'choice' && p && p.status === 'waiting' && !state.finale) body = viewChoice(p);
     else if (route.name === 'roll' && p && (p.status === 'rolled' || (p.status === 'waiting' && !state.finale))) body = viewRoll(p);
     else if (route.name === 'finale' && state.finale) body = viewFinale();
+    else if (route.name === 'pick' && !state.finale && state.players.some(x => x.status === 'waiting')) body = viewPick();
     else { route = { name: 'home' }; body = viewHome(); }
     $app.innerHTML = `${header(route.name === 'home')}<main class="view${ui.enter ? ' enter' : ''}">${body}</main>`;
     ui.enter = false;
 
     const input = document.getElementById('new-name');
     if (input) { input.value = typed; if (hadFocus) input.focus(); }
+    wheelWaiting = route.name === 'pick' ? () => actions['pick-spin']() : null;     // a flick of the dice phone spins it too
     tellPhone();
   }
   function go(r, keepFresh) {
@@ -1677,8 +1712,8 @@
 
   function introBeats() {
     const named = re => state.players.filter(p => re.test(p.name)).map(p => p.name);
-    const lola = named(/^lola\b/i)[0], titas = named(/^tita\b/i), titos = named(/^tito\b/i);
-    const tita = titas.length ? oneOf(titas) : 'Tita', tito = titos.length ? oneOf(titos) : 'Tito';
+    const lola = named(/^lola\b/i)[0], titos = named(/^tito\b/i);
+    const tito = titos.length ? oneOf(titos) : 'Tito';
     const showDice = `<div class="show-dice">${DICE.map((d, i) => dieHTML(i, null, 'tumble')).join('')}</div>`;
     const bill = `<div class="bill"><small>Pamasko</small>${peso(STAKE)}</div>`;
     return [
@@ -1688,10 +1723,10 @@
         vo: 'Welcome... to Rivera Royale! The only game show in the world filmed entirely in this living room.' },
       { kicker: 'May inihanda para sa inyo si', big: 'Ang pinaka-poging pinsan at pamangkin', art: '<div class="medal">RJ</div>',
         vo: 'RJ prepared something for you. [tl]Si RJ, ang pinaka-poging pinsan at pamangkin ninyo, ay may inihandang simpleng palaro. Opo. Siya mismo ang nagsulat niyan.[/tl]' },
-      { kicker: 'Instead of an envelope', big: 'He built a game show.', art: `<div class="device">${logoHTML()}<span class="spark s1">${STAR_ICON}</span><span class="spark s2">${STAR_ICON}</span><span class="spark s3">${STAR_ICON}</span></div>`,
-        vo: `Instead of handing out envelopes like a normal person, he built you an entire game show. Simple daw. And no, ${tita}... it is not another fruit salad.` },
-      { kicker: 'How it works', big: `${peso(STAKE)} with your name on it`, art: `<div class="fan">${bill}${bill}${bill}</div>`,
-        vo: 'Here is how it works. RJ is holding three hundred pesos with your name on it.' },
+      { kicker: 'Walang lechon ulo ngayong taon', big: 'He built a game show.', art: `<div class="device">${logoHTML()}<span class="spark s1">${STAR_ICON}</span><span class="spark s2">${STAR_ICON}</span><span class="spark s3">${STAR_ICON}</span></div>`,
+        vo: 'Every year, RJ brings the lechon ulo. This year... walang lechon ulo. Para sa puso natin. Instead, he built you an entire game show. Simple daw.' },
+      { kicker: 'How it works', big: `${peso(STAKE)} cash. Yours to take.`, art: `<div class="fan">${bill}${bill}${bill}</div>`,
+        vo: 'Here is how it works. RJ has three hundred pesos, cash, ready for each of you.' },
       { kicker: 'But first, one question', big: 'Pera… o kapalaran?', art: `<div class="versus">${bill}<i>o</i>${showDice}</div>`,
         vo: 'But first, one question. Pera... o kapalaran? Money... or destiny? Take the three hundred and sit back down. Or leave it on the table... and roll.' },
       { kicker: 'Kapalaran', big: 'Three dice. Add them up.', art: showDice,
@@ -1918,6 +1953,24 @@
     });
   }
 
+  /** Turn a wheel of n wedges to the angle `end`, slowing down, with a click as each peg passes the pointer. */
+  function runWheel(rotEl, pin, n, end, done) {
+    if (reduceMotion()) { rotEl.style.transform = `rotate(${end}deg)`; done(); return; }
+    sfx.whoosh(); buzz(30);
+    const a = 360 / n, D = 6200, t0 = performance.now();
+    let last = -1;
+    (function step(now) {
+      const t = Math.min(1, (now - t0) / D), th = end * (1 - Math.pow(1 - t, 4));
+      rotEl.style.transform = `rotate(${th}deg)`;
+      const under = Math.floor(((((-th) % 360) + 360) % 360) / a);
+      if (under !== last) {
+        if (last !== -1) { sfx.peg(); pin.style.transform = 'rotate(-16deg)'; setTimeout(() => { pin.style.transform = ''; }, 70); }
+        last = under;
+      }
+      if (t < 1) requestAnimationFrame(step); else setTimeout(done, 250);
+    })(t0);
+  }
+
   /* The third die opened the roulette: swap the tray for the wheel and wait for a spin.
      The prize was fixed and saved with the dice; the spin only reveals it. */
   function openWheel(p, root, tray, amt, label, soFar, closeTurn) {
@@ -1962,22 +2015,9 @@
         tellPhone();
         if (btn) btn.remove();
         wheel.classList.remove('ready');
-        const n = p.wheel.slots.length, a = 360 / n;
+        const n = p.wheel.slots.length;
         const end = 360 * 6 + restAngle(p.wheel);
-        if (reduceMotion()) { rotEl.style.transform = `rotate(${end}deg)`; settle(); return; }
-        sfx.whoosh(); buzz(30);
-        const D = 6200, t0 = performance.now();
-        let last = -1;
-        (function step(now) {
-          const t = Math.min(1, (now - t0) / D), th = end * (1 - Math.pow(1 - t, 4));
-          rotEl.style.transform = `rotate(${th}deg)`;
-          const under = Math.floor(((((-th) % 360) + 360) % 360) / a);
-          if (under !== last) {
-            if (last !== -1) { sfx.peg(); pin.style.transform = 'rotate(-16deg)'; setTimeout(() => { pin.style.transform = ''; }, 70); }
-            last = under;
-          }
-          if (t < 1) requestAnimationFrame(step); else setTimeout(settle, 250);
-        })(t0);
+        runWheel(rotEl, pin, n, end, settle);
       };
       wheel.addEventListener('click', spin);
       if (btn) btn.addEventListener('click', spin);
@@ -2201,6 +2241,7 @@
     const p = route.id ? player(route.id) : null;
     let stage = 'lobby';
     if (showing || route.name === 'finale') stage = 'show';
+    else if (route.name === 'pick') stage = busy ? 'rolling' : 'pick';
     else if (route.name === 'choice' && p) stage = 'choice';
     else if (route.name === 'roll' && p) stage = wheelWaiting ? 'wheel' : busy ? 'rolling' : p.status === 'rolled' ? 'result' : 'ready';
     const done = stage === 'result';
@@ -2257,6 +2298,7 @@
         sub = thrown ? '' : sawMotion ? 'Shake hard, swing toward the big screen, and stop.' : 'If shaking does nothing, use the button.';
         btn = thrown ? null : ['throw', 'Throw'];
       } else if (s.stage === 'wheel') { name = s.name; big = thrown ? 'Look at the big screen!' : 'Flick to spin the wheel!'; btn = thrown ? null : ['throw', 'Spin']; }
+      else if (s.stage === 'pick') { big = thrown ? 'Look at the big screen!' : 'Flick to spin for the next player!'; btn = thrown ? null : ['throw', 'Spin']; }
       else if (s.stage === 'rolling') { name = s.name; big = 'Look at the big screen!'; }
       else if (s.stage === 'result') { name = s.name; kicker = 'takes home'; big = peso(s.total || 0) + (s.bag ? ' + the Mystery Bag' : ''); }
       else if (s.stage === 'choice') { name = s.name; big = 'Pera o Kapalaran?'; sub = 'The dice are waiting.'; }
@@ -2307,7 +2349,7 @@
       energy = Math.max(mag, energy * Math.exp(-dt / 160));     // smooth, for the meter and the big screen
       quick = Math.max(mag, quick * Math.exp(-dt / 60));        // fast, to catch the instant the hand stops
       peak = Math.max(mag, peak * Math.exp(-dt / 500));         // how hard the last swing was
-      const wheel = stage.stage === 'wheel';
+      const wheel = stage.stage === 'wheel' || stage.stage === 'pick';
       if (!(stage.stage === 'ready' || wheel) || thrown || link.status() !== 'on') { shakeFrom = 0; work = 0; calmFrom = 0; return; }
       if (quick > SHAKE_ON && !shakeFrom) { shakeFrom = now; work = 0; }
       if (shakeFrom) {
@@ -2362,7 +2404,7 @@
       if (m.t !== 'stage') return;
       const changed = m.stage !== stage.stage || m.name !== stage.name;
       stage = m;
-      if (changed && (m.stage === 'ready' || m.stage === 'wheel' || m.stage === 'rolling')) { thrown = m.stage === 'rolling'; clearTimeout(giveUp); }
+      if (changed && (m.stage === 'ready' || m.stage === 'wheel' || m.stage === 'pick' || m.stage === 'rolling')) { thrown = m.stage === 'rolling'; clearTimeout(giveUp); }
       if (changed && m.stage === 'result') buzz(m.bag || m.total >= 500 ? [60, 40, 60, 40, 220] : 40);
       paint();
     });
@@ -2398,24 +2440,35 @@
       go({ name: 'choice', id: el.dataset.id });
       if (p && route.name === 'choice') { sfx.slam(); voice.say(lines.turn(p.name)); }
     },
-    // Spin a spotlight across the waiting names and stop on one.
+    // Who goes next is left to a wheel of the waiting names.
     pick() {
-      const chips = [...$app.querySelectorAll('.name-chip')];
-      if (!chips.length) return;
-      const winner = Math.floor(Math.random() * chips.length);
-      const open = () => { busy = false; actions.turn(chips[winner]); };
-      if (reduceMotion()) { open(); return; }
+      const waiting = state.players.filter(p => p.status === 'waiting');
+      if (!waiting.length || state.finale) return;
+      if (waiting.length === 1) { actions.turn({ dataset: { id: waiting[0].id } }); return; }
+      go({ name: 'pick' });
+      sfx.slam();
+      voice.say(lines.pickOpen());
+    },
+    'pick-spin'() {
+      const wrap = $app.querySelector('.pick');
+      const waiting = state.players.filter(p => p.status === 'waiting');
+      if (busy || !wrap || !waiting.length) return;
+      const n = waiting.length, k = randInt(n), a = 360 / n;       // every waiting name is equally likely
+      const wheel = wrap.querySelector('.wheel');
       busy = true;
-      let i = 0, delay = 70;
-      const last = chips.length * 2 + winner;
-      (function hop() {
-        chips.forEach(c => c.classList.remove('spot'));
-        chips[i % chips.length].classList.add('spot');
-        sfx.tick();
-        if (i === last) { sfx.star(); buzz(30); setTimeout(open, 750); return; }
-        i += 1; delay *= 1.07;
-        setTimeout(hop, delay);
-      })();
+      wheelWaiting = null;
+      tellPhone();
+      wrap.querySelectorAll('.back, button[data-action="pick-spin"]').forEach(el => el.remove());
+      wheel.classList.remove('ready');
+      const end = 360 * 5 - (k + 0.5 + (Math.random() * 0.6 - 0.3)) * a;
+      runWheel(wrap.querySelector('.wheel-rot'), wrap.querySelector('.wheel-pin'), n, end, () => {
+        wheel.classList.add('done');
+        wrap.querySelectorAll('.wedge')[k].classList.add('won');
+        sfx.fanfare(); buzz([40, 40, 80]);
+        link.send({ t: 'buzz', p: [40, 40, 80] });
+        fx.at(wheel, { n: 50, power: 13 });
+        setTimeout(() => { busy = false; actions.turn({ dataset: { id: waiting[k].id } }); }, 1300);
+      });
     },
     'to-roll'(el) {
       const p = player(el.dataset.id);

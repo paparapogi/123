@@ -31,7 +31,10 @@ reveal it.
 ## Running the show
 
 1. Open the game, add everyone's name, and tap **Start the show** for the intro.
-2. Tap a name (or **Pick someone for me**) to call that person up, then tap Pera or Kapalaran.
+2. Tap **Spin for the next player**. A wheel of the waiting names decides who goes next, so the
+   order is fair (roulette prizes can only be won once, which favours going early). The person
+   it lands on is called up and taps Pera or Kapalaran. Host tools can still call someone up by
+   hand.
 3. On the dice stage, tap anywhere to throw, or hold the screen to shake first.
 4. When everyone is done, tap **End the show** and let the ending play.
 
