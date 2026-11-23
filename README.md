@@ -100,7 +100,7 @@ to read a phone's motion sensors or connect two devices directly.
    `/ (root)`, and save. After a minute the game is at `https://<user>.github.io/<repo>/`.
 2. Open that address on the big screen and add the names (several at once, separated by commas).
 3. **Host tools → Connect a phone**, then scan the QR code with the phone and tap
-   **Pick up the dice**.
+   **Start**.
 
 How it works: the big screen stays in charge of the game and draws every result; the phone only
 sends requests ("shaking", "thrown", "Pera", and so on). The throw is the moment the shaking
