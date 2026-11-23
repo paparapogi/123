@@ -11,11 +11,20 @@ Each person is called up and asked one question: **Pera o Kapalaran?**
 | --- | --- |
 | 1 | ₱20, ₱25, ₱30, ₱35, ₱40, ₱50 |
 | 2 | ₱50, ₱55, ₱70, ₱80, ₱90, ₱100 |
-| 3 | ₱0, ₱20, ₱50, ₱100, Roulette, ₱1,000 |
+| 3 | ₱0, ₱50, ×2, ×3, Roulette, ₱1,000 |
 
-**Roulette.** If die 3 lands on its Roulette side, the player spins a wheel for ₱0, ₱20, ₱50, ₱100,
-₱500, ₱1,000 or the Jackpot (a Mystery Bag). Each prize can be won once; after that it is off the
-wheel for everyone else.
+**×2 and ×3** multiply what the first two dice add up to, so ₱25 + ₱90 with ×3 pays ₱345.
+
+**Roulette.** If die 3 lands on its Roulette side, the player spins a wheel with nothing bad on
+it: ₱500, ₱1,000, ×4, ×5, the Jackpot (a Mystery Bag), Spin again, or Roll again.
+
+- ₱500 and ₱1,000 are added to the first two dice; ×4 and ×5 multiply them.
+- The Jackpot pays the first two dice in cash, plus the Mystery Bag.
+- Spin again takes that wedge off the wheel and gives another spin.
+- Roll again hands back all three dice. That new roll is the one that counts, and it can open
+  the roulette again.
+
+Each wedge can come up once; after that it is off the wheel for everyone else.
 
 **The ending (a surprise).** Nothing on screen mentions a prize for the lowest roller until the
 show is over. When the host taps **End the show**, the game names the big winner and rolls the
@@ -24,8 +33,10 @@ roller (who doesn't already hold a Mystery Bag) is called up and asked to keep t
 hand them back for a Mystery Bag. A tie is settled by a roll-off. If nobody won the roulette
 Jackpot, the host can then offer that bag to the next lowest roller.
 
-A roll pays ₱70 to ₱1,150 in cash, about ₱342 on average. The dice and the wheel are drawn fairly,
-and each result is fixed and saved the instant the dice are let go; the tumble and the spin only
+A roll pays ₱70 to ₱1,150 in cash, about ₱407 on average, and beats the ₱300 about 38% of the
+time. If all eleven people roll, the night costs about ₱4,500 on average (under ₱6,100 nine nights
+in ten). The dice and the wheel are drawn fairly, and the whole turn, including any extra spin or
+roll, is fixed and saved the instant the dice are first let go; the tumble and the spins only
 reveal it.
 
 ## Running the show
@@ -64,7 +75,8 @@ Whoever is playing holds the phone and:
   it longer; **Or tap to spin** does the same without moving);
 - taps **Pera** or **Kapalaran** (Pera asks "Final answer?" and needs a second tap, while the big
   screen lights up the door being considered);
-- shakes the phone, swings it toward the big screen and stops, and the three dice fly in;
+- shakes the phone, swings it toward the big screen and stops, and the three dice fly in (if
+  the roulette says Roll again, the phone gets the dice back for one more throw);
 - taps **Pass it on** when the turn is over.
 
 The phone buzzes as each die lands and shows the final amount. After the ending's reveal, the
