@@ -55,9 +55,19 @@ them; the marks never show in the captions.
 
 ## The dice phone
 
-A second phone can be the dice. People shake it, swing it toward the big screen and stop, and the
-three dice fly onto the big screen. A flick of the phone also spins the roulette, and the phone
-buzzes as each die lands.
+A second phone can be the player's controller, so the big screen only has to show the action.
+Whoever is playing holds the phone and:
+
+- pulls a handle down to spin the name wheel (who goes next) and the roulette;
+- taps **Pera** or **Kapalaran** (Pera asks "Final answer?" and needs a second tap, while the big
+  screen lights up the door being considered);
+- shakes the phone, swings it toward the big screen and stops, and the three dice fly in;
+- taps **Pass it on** when the turn is over.
+
+The phone buzzes as each die lands and shows the final amount. After the ending's reveal, the
+lowest roller answers "Pera o Mystery Bag?" on the phone too. The host still starts the intro and
+ends the show from the big screen, and every control on the big screen keeps working as a
+fallback.
 
 This needs the game's own web address (GitHub Pages), because a page inside Claude is not allowed
 to read a phone's motion sensors or connect two devices directly.
@@ -69,7 +79,8 @@ to read a phone's motion sensors or connect two devices directly.
    **Pick up the dice**.
 
 How it works: the big screen stays in charge of the game and draws every result; the phone only
-reports "shaking" and "thrown". The throw is the moment the shaking stops. The two devices talk
+sends requests ("shaking", "thrown", "Pera", and so on). The throw is the moment the shaking
+stops. The two devices talk
 directly (WebRTC), introduced by the free public PeerJS service, so both need internet. If the link
 drops, the phone keeps retrying and the dice can always be rolled from the big screen.
 
