@@ -1,0 +1,1073 @@
+<title>Pamasko Dice</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=Paytone+One&display=swap">
+<style>
+  /* Layout: one phone-width column on a felt table. The dice tray is the only raised object;
+     the roster and the record lie flat on the felt as ruled lists. Single dark look by choice. */
+  :root {
+    color-scheme: dark;
+    --felt: #0e3d30;
+    --felt-deep: #072a21;
+    --felt-rise: #165241;
+    --ivory: #f7eeda;
+    --muted: #b5c8bb;
+    --line: rgba(247, 238, 218, .17);
+    --line-strong: rgba(247, 238, 218, .5);
+    --gold: #f4c247;
+    --gold-deep: #b9820f;
+    --ink: #20170a;
+    --alert: #ffb9ab;
+    /* Banknote colours: P20 orange, P50 red, P100 violet, P1,000 blue. */
+    --n20: #d4640c;
+    --n50: #c4253a;
+    --n100: #7350ae;
+    --n1000: #1f63c0;
+    --display: "Paytone One", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+    --body: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    background:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"),
+      radial-gradient(140% 60% at 50% -8%, var(--felt-rise) 0%, var(--felt) 46%, var(--felt-deep) 100%),
+      var(--felt-deep);
+    color: var(--ivory);
+    font: 500 17px/1.5 var(--body);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1, h2, p, ul, ol, dl, dd { margin: 0; padding: 0; }
+  ul, ol { list-style: none; }
+  button, input { font: inherit; color: inherit; }
+  button { touch-action: manipulation; }
+  :focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  #app {
+    max-width: 600px;
+    margin: 0 auto;
+    padding-block: 14px 56px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+
+  /* ---------- Header ---------- */
+  .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+  .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: none; border: 0; padding: 4px 0; cursor: pointer;
+    font: 400 clamp(19px, 5.6vw, 24px)/1 var(--display); letter-spacing: .01em; color: var(--ivory); white-space: nowrap;
+  }
+  .brand svg { width: 30px; height: 35px; color: var(--gold); flex: none; }
+  .top-tools { display: flex; align-items: center; gap: 8px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 4px 11px; border: 1px solid var(--line); border-radius: 999px;
+    font-size: 13px; font-weight: 700; color: var(--muted); white-space: nowrap;
+  }
+  .pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .pill.ok::before { background: var(--gold); }
+  .pill.warn::before { background: var(--alert); }
+  .pill.busy::before { animation: blink 1s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .icon-btn {
+    width: 44px; height: 44px; display: grid; place-items: center;
+    background: none; border: 1px solid var(--line); border-radius: 50%; cursor: pointer; color: var(--ivory);
+  }
+  .icon-btn[aria-pressed="false"] { color: var(--muted); }
+  .bulbs {
+    height: 10px; margin-top: -12px;
+    background:
+      radial-gradient(circle 3.5px at 14px 5px, var(--gold) 96%, transparent) 0 0 / 56px 10px repeat-x,
+      radial-gradient(circle 3.5px at 42px 5px, var(--ivory) 96%, transparent) 0 0 / 56px 10px repeat-x;
+    opacity: .85;
+  }
+
+  /* ---------- Type ---------- */
+  h1 { font: 400 30px/1.15 var(--display); text-wrap: balance; }
+  h2 { font: 400 21px/1.2 var(--display); text-wrap: balance; }
+  .lede { font-size: 19px; line-height: 1.45; max-width: 34em; }
+  .note { color: var(--muted); max-width: 36em; }
+  .fine { color: var(--muted); font-size: 14px; }
+  .error { color: var(--alert); font-weight: 700; }
+  .sec { display: flex; flex-direction: column; gap: 14px; }
+  .sec > h2 { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 54px; padding: 12px 22px;
+    border: 2px solid transparent; border-radius: 14px;
+    font-weight: 800; font-size: 17px; line-height: 1.2; text-align: center; cursor: pointer;
+    transition: transform .08s ease, box-shadow .08s ease, background-color .15s ease;
+  }
+  .btn.wide { width: 100%; }
+  .btn.primary { background: var(--gold); color: var(--ink); box-shadow: 0 4px 0 var(--gold-deep); }
+  .btn.primary:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--gold-deep); }
+  .btn.ghost { background: transparent; color: var(--ivory); border-color: var(--line-strong); }
+  .btn.quiet { min-height: 44px; padding: 8px 14px; font-size: 15px; background: transparent; color: var(--ivory); border-color: var(--line); }
+  .btn.armed, .btn.armed.primary { background: var(--n50); color: #fff; border-color: transparent; box-shadow: 0 4px 0 #7c1423; }
+  .btn:disabled, .name-chip:disabled, input:disabled { opacity: .45; cursor: not-allowed; }
+  .back {
+    align-self: flex-start; background: none; border: 0; padding: 10px 4px; margin: -10px 0 -6px -4px;
+    color: var(--muted); font-weight: 700; cursor: pointer;
+  }
+
+  /* ---------- Home: roster ---------- */
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .name-chip {
+    min-height: 52px; padding: 10px 22px; border: 0; border-radius: 999px;
+    background: var(--ivory); color: var(--ink); font-weight: 800; font-size: 18px; cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, .38);
+    max-width: 100%; overflow-wrap: anywhere;
+  }
+  .name-chip:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, .38); }
+  .add { display: flex; gap: 10px; }
+  .add input {
+    flex: 1; min-width: 0; min-height: 54px; padding: 10px 16px;
+    background: rgba(0, 0, 0, .22); border: 2px solid var(--line-strong); border-radius: 14px;
+  }
+  .add input::placeholder { color: var(--muted); opacity: 1; }
+
+  /* ---------- Home: the record ---------- */
+  .record { display: flex; flex-direction: column; }
+  .row {
+    display: grid; grid-template-columns: 2ch minmax(0, 1fr) auto; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--line);
+  }
+  .rank { font: 400 18px/1 var(--display); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .who { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .who b { font-weight: 800; font-size: 18px; line-height: 1.2; overflow-wrap: anywhere; }
+  .how { color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    display: inline-flex; align-items: center; padding: 1px 9px; border-radius: 999px;
+    font-weight: 800; font-size: 13px; color: #fff; font-variant-numeric: tabular-nums;
+  }
+  .chip.lucky { box-shadow: 0 0 0 2px var(--gold); }
+  .n20 { background: var(--n20); }
+  .n50 { background: var(--n50); }
+  .n100 { background: var(--n100); }
+  .n1000 { background: var(--n1000); }
+  .amt { font: 400 23px/1 var(--display); font-variant-numeric: tabular-nums; text-align: right; }
+  .amt.up { color: var(--gold); }
+  .amt.bagged { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 16px; color: var(--gold); }
+  .amt.bagged s { font: 700 13px/1 var(--body); color: var(--muted); }
+
+  /* ---------- Home: finale card + host tools ---------- */
+  .card {
+    display: flex; flex-direction: column; gap: 14px; padding: 20px;
+    background: var(--felt-rise); border: 1px solid var(--line); border-radius: 20px;
+  }
+  .card-head { display: flex; align-items: center; gap: 14px; }
+  .card-head svg { width: 46px; height: 52px; flex: none; }
+  .host { border-top: 1px solid var(--line); padding-top: 6px; }
+  .host summary { cursor: pointer; padding: 12px 0; font-weight: 800; color: var(--muted); }
+  .host[open] summary { color: var(--ivory); }
+  .host-body { display: flex; flex-direction: column; gap: 20px; padding-bottom: 8px; }
+  .tally > div { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px dashed var(--line); }
+  .tally dt { color: var(--muted); }
+  .tally dd { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+  .manage li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .manage .m-name { min-width: 0; overflow-wrap: anywhere; }
+  .manage .m-name small { display: block; color: var(--muted); font-size: 14px; }
+  .manage .m-acts, .danger { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* ---------- Choice ---------- */
+  .choice, .roll, .finale { display: flex; flex-direction: column; gap: 20px; }
+  .option { display: flex; flex-direction: column; gap: 12px; }
+  .option.raised { padding: 20px; background: var(--felt-rise); border: 1px solid var(--line); border-radius: 20px; }
+  .or { display: flex; align-items: center; gap: 14px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: .12em; font-size: 13px; }
+  .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .legend { display: flex; flex-direction: column; gap: 18px; padding: 10px 0 6px; }
+  .legend li { display: flex; align-items: center; gap: 18px; }
+  .legend b { display: block; font: 400 17px/1.2 var(--display); }
+  .legend span { min-width: 0; }
+
+  /* ---------- Dice ---------- */
+  .die { --s: clamp(64px, 21vw, 112px); --dur: 1500ms; width: var(--s); display: flex; flex-direction: column; align-items: center; gap: 10px; flex: none; }
+  .die-stage { position: relative; width: var(--s); height: var(--s); perspective: calc(var(--s) * 5); }
+  .die-glow {
+    position: absolute; inset: -45%; border-radius: 50%; opacity: 0; transition: opacity .35s ease;
+    background: radial-gradient(circle, rgba(244, 194, 71, .65) 0%, rgba(244, 194, 71, 0) 62%);
+  }
+  .die-hop, .die-tilt, .cube { width: 100%; height: 100%; transform-style: preserve-3d; }
+  .die-hop { position: relative; }
+  .die-tilt { transform: rotateX(-16deg) rotateY(-18deg); }
+  .cube { position: relative; transition: transform var(--dur) cubic-bezier(.12, .72, .2, 1); }
+  .face {
+    position: absolute; inset: 0; border-radius: 15%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .08em;
+    color: #fff; font: 400 calc(var(--s) * .3)/1 var(--display); font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .28);
+    box-shadow: inset 0 0 0 calc(var(--s) * .05) rgba(255, 255, 255, .2), inset 0 0 calc(var(--s) * .22) rgba(0, 0, 0, .3);
+    user-select: none;
+  }
+  .face.lucky { box-shadow: inset 0 0 0 calc(var(--s) * .06) var(--gold), inset 0 0 calc(var(--s) * .22) rgba(0, 0, 0, .3); }
+  .face svg { width: .78em; height: .78em; color: var(--gold); flex: none; }
+  .face.wide-num span { font-size: .74em; }
+  .f1 { transform: translateZ(calc(var(--s) / 2)); }
+  .f2 { transform: rotateY(90deg) translateZ(calc(var(--s) / 2)); }
+  .f3 { transform: rotateY(180deg) translateZ(calc(var(--s) / 2)); }
+  .f4 { transform: rotateY(-90deg) translateZ(calc(var(--s) / 2)); }
+  .f5 { transform: rotateX(90deg) translateZ(calc(var(--s) / 2)); }
+  .f6 { transform: rotateX(-90deg) translateZ(calc(var(--s) / 2)); }
+  .die-shadow { width: 84%; height: 12px; border-radius: 50%; background: rgba(0, 0, 0, .5); filter: blur(6px); }
+  .readout {
+    min-height: 1.3em; font: 400 21px/1.3 var(--display); font-variant-numeric: tabular-nums;
+    opacity: 0; transform: translateY(-6px) scale(.9); transition: opacity .25s ease, transform .25s ease;
+  }
+  .die.settled .readout { opacity: 1; transform: none; }
+  .die.settled.is-lucky .readout { color: var(--gold); }
+  .die.settled.is-lucky .die-glow { opacity: 1; }
+
+  .die.rolling .die-hop { animation: hop var(--dur) ease-out both; }
+  .die.rolling .die-shadow { animation: shade var(--dur) ease-out both; }
+  @keyframes hop {
+    0% { transform: translateY(0); } 12% { transform: translateY(-62%); } 30% { transform: translateY(0); }
+    44% { transform: translateY(-34%); } 58% { transform: translateY(0); } 70% { transform: translateY(-14%); }
+    82% { transform: translateY(0); } 91% { transform: translateY(-4%); } 100% { transform: translateY(0); }
+  }
+  @keyframes shade {
+    0%, 30%, 58%, 82%, 100% { transform: scale(1); opacity: 1; }
+    12% { transform: scale(.6); opacity: .45; } 44% { transform: scale(.78); opacity: .65; } 70% { transform: scale(.9); opacity: .85; }
+  }
+  .roll.is-ready .die-hop { animation: bob 2.6s ease-in-out infinite; }
+  .roll.is-ready .die:nth-child(2) .die-hop { animation-delay: -.9s; }
+  .roll.is-ready .die:nth-child(3) .die-hop { animation-delay: -1.7s; }
+  @keyframes bob { 50% { transform: translateY(-7%); } }
+
+  .die.mini { --s: 56px; gap: 0; margin: 4px 6px; }
+  .die.mini .die-tilt { animation: sway 4.5s ease-in-out infinite alternate; }
+  .die.mini .cube { transition: none; }
+  .legend li:nth-child(2) .die-tilt { animation-delay: -1.5s; }
+  .legend li:nth-child(3) .die-tilt { animation-delay: -3s; }
+  @keyframes sway { from { transform: rotateX(-24deg) rotateY(-40deg); } to { transform: rotateX(-18deg) rotateY(-14deg); } }
+
+  /* ---------- Roll screen ---------- */
+  .roll { min-height: calc(100vh - 150px); user-select: none; -webkit-user-select: none; }
+  .roll.is-ready { cursor: pointer; }
+  .roll h1 { text-align: center; }
+  .tray {
+    display: flex; justify-content: center; gap: clamp(16px, 6vw, 40px);
+    padding: 74px 10px 20px; border-radius: 28px;
+    background: radial-gradient(90% 80% at 50% 40%, rgba(22, 82, 65, .9), rgba(7, 42, 33, .95));
+    box-shadow: inset 0 3px 22px rgba(0, 0, 0, .55), 0 0 0 2px var(--gold-deep), 0 0 0 7px var(--felt-deep);
+  }
+  .roll-cta { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+  .result { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; animation: rise .35s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+  .sum { color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .total { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .total-label { font-weight: 700; overflow-wrap: anywhere; }
+  .total-amt { font: 400 clamp(56px, 19vw, 88px)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--gold); }
+  .verdict { font-size: 19px; font-weight: 700; max-width: 26em; }
+  .result .btn { margin-top: 12px; }
+
+  /* ---------- Finale ---------- */
+  .round { display: flex; flex-direction: column; gap: 12px; padding: 18px; background: var(--felt-rise); border: 1px solid var(--line); border-radius: 20px; }
+  .contenders { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
+  .contender { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 12px 6px; border-radius: 14px; background: rgba(0, 0, 0, .2); }
+  .contender b { font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+  .contender .tag { font-size: 13px; font-weight: 800; color: var(--muted); min-height: 1.5em; }
+  .contender.in { box-shadow: 0 0 0 2px var(--gold); }
+  .contender.in .tag { color: var(--gold); }
+  .contender.out { opacity: .55; }
+  .pip-die {
+    width: 54px; height: 54px; padding: 8px; border-radius: 12px; background: var(--ivory);
+    display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 2px;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .4);
+  }
+  .pip-die i { border-radius: 50%; }
+  .pip-die i.on { background: var(--ink); }
+  .offer { display: flex; flex-direction: column; gap: 14px; padding: 20px; background: var(--felt-rise); border: 1px solid var(--line); border-radius: 20px; }
+  .offer-head { display: flex; align-items: center; gap: 14px; }
+  .offer-head svg { width: 54px; height: 61px; flex: none; }
+  .offer-head div { min-width: 0; overflow-wrap: anywhere; }
+  .offer-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+  .offer.done { border-color: var(--gold-deep); }
+  .closing { font: 400 24px/1.25 var(--display); text-align: center; color: var(--gold); padding-top: 6px; }
+
+  .confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+
+  @media (min-width: 700px) {
+    h1 { font-size: 36px; }
+    .tray { padding-top: 90px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cube, .readout, .die-glow, .btn { transition: none; }
+    .die.rolling .die-hop, .die.rolling .die-shadow, .roll.is-ready .die-hop, .result, .pill.busy::before { animation: none; }
+    .die.mini .die-tilt { animation: none; transform: rotateX(-22deg) rotateY(-30deg); }
+  }
+</style>
+
+<div id="app"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ================= Rules ================= */
+  const STAKE = 300;
+  const DICE = [
+    { base: 20, lucky: 50 },
+    { base: 50, lucky: 100 },
+    { base: 50, lucky: 1000 },
+  ];
+  const LUCKY_FACE = 5;          // one of the six faces (the underside at rest) is the lucky side
+  const BAG_SLOTS = 2;           // how many of the lowest rollers get the Mystery Bag offer
+  const MIN_TOTAL = DICE.reduce((s, d) => s + d.base, 0);
+  const MAX_TOTAL = DICE.reduce((s, d) => s + d.lucky, 0);
+  // Cube rotation [rotateX, rotateY] that brings each face to the front.
+  const FACE_ROT = [[0, 0], [0, -90], [0, 180], [0, 90], [-90, 0], [90, 0]];
+
+  const LS_GAME = 'pamasko-dice:game';
+  const LS_SOUND = 'pamasko-dice:sound';
+
+  /* ================= Helpers ================= */
+  const $app = document.getElementById('app');
+  const peso = n => '₱' + Math.round(n).toLocaleString('en-US');
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const list = names => names.length < 2 ? names.join('') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  const newId = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+  const store = {
+    get(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { window.localStorage.setItem(k, v); return true; } catch (e) { return false; } },
+  };
+
+  /** A fair roll of one six-sided die: 0..5, each equally likely. */
+  function rollFace() {
+    const buf = new Uint8Array(1);
+    for (;;) {
+      window.crypto.getRandomValues(buf);
+      if (buf[0] < 252) return buf[0] % 6;   // 252 = 6 x 42, so no face is favoured
+    }
+  }
+
+  /* ================= Game state ================= */
+  const blank = () => ({ v: 1, rev: 0, at: 0, players: [], finale: null });
+  const isGame = s => !!s && typeof s === 'object' && typeof s.rev === 'number' && Array.isArray(s.players);
+
+  let state = blank();
+  let dirty = false;             // this device holds changes the saved copy doesn't have yet
+  try {
+    const saved = JSON.parse(store.get(LS_GAME));
+    if (saved && isGame(saved.state)) { state = saved.state; dirty = !!saved.dirty; }
+  } catch (e) { /* start fresh */ }
+
+  const saveLocal = () => store.set(LS_GAME, JSON.stringify({ state, dirty }));
+  const player = id => state.players.find(p => p.id === id);
+  const worth = p => p.status === 'kept' ? STAKE : p.total;
+  const tookBag = p => !!state.finale && state.finale.decisions[p.id] === 'bag';
+
+  /* ================= Saving and syncing =================
+     Inside Claude the whole game lives in one shared document, so a refresh or a second
+     screen shows the same record. Anywhere else it lives in this browser only. */
+  const hasHost = !!(window.claude && typeof window.claude.use === 'function');
+  const sync = { mode: hasHost ? 'checking' : 'local', ready: !hasHost, error: false, readOnly: false, sawServer: false };
+  let docRef = null, writing = false, retryTimer = 0, retryDelay = 4000;
+
+  function commit(change) {
+    if (!sync.ready || sync.readOnly) return false;
+    change(state);
+    state.rev += 1;
+    state.at = Date.now();
+    dirty = true;
+    saveLocal();
+    push();
+    paintStatus();
+    return true;
+  }
+
+  async function push() {
+    if (!docRef || sync.readOnly || !sync.sawServer || writing) return;
+    writing = true;
+    clearTimeout(retryTimer);
+    paintStatus();
+    try {
+      while (dirty) {
+        const sent = state.rev;
+        await docRef.set(clone(state));
+        if (state.rev === sent) { dirty = false; saveLocal(); }
+      }
+      sync.error = false;
+      retryDelay = 4000;
+    } catch (e) {
+      const code = e && e.code;
+      if (code === 'invalid_argument' || code === 'transform_error') {
+        // This viewer may look but not write: show what is saved and stop offering moves.
+        sync.readOnly = true;
+        dirty = false;
+        try { const snap = await docRef.get(); if (snap.exists && isGame(snap.data())) state = clone(snap.data()); } catch (e2) { /* keep what we have */ }
+        saveLocal();
+        route = { name: 'home' };
+      } else if (code === 'revoked' || code === 'not_granted' || code === 'capability_disabled' || code === 'capability_removed') {
+        sync.mode = 'local';
+        docRef = null;
+      } else {
+        sync.error = true;
+        retryTimer = setTimeout(push, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, 30000);
+      }
+    }
+    writing = false;
+    if (sync.readOnly) render(); else paintStatus();
+  }
+
+  function adopt(remote) {
+    if (dirty && state.rev > 0) store.set(LS_GAME + ':backup', JSON.stringify(state));
+    state = clone(remote);
+    dirty = false;
+    saveLocal();
+    if (busy) return;
+    if (route.name === 'choice' || route.name === 'roll') {
+      const p = player(route.id);
+      if (!p || (route.name === 'choice' && p.status !== 'waiting')) route = { name: 'home' };
+    }
+    if (route.name === 'finale' && !state.finale) route = { name: 'home' };
+  }
+
+  async function connect() {
+    let db = null;
+    try { db = await window.claude.use('db'); } catch (e) { db = null; }
+    if (!db) { sync.mode = 'local'; sync.ready = true; render(); return; }
+    sync.mode = 'cloud';
+    docRef = db.doc('game/state');
+
+    window.claude.use('user').then(async user => {
+      if (user && (await user.can('data.write')) === false) { sync.readOnly = true; render(); }
+    }).catch(() => {});
+
+    // Don't keep the family waiting on a slow connection: after 10 s, play from this device's copy.
+    const giveUp = setTimeout(() => {
+      if (!sync.ready) { sync.ready = true; sync.error = true; render(); }
+    }, 10000);
+
+    docRef.onSnapshot(snap => {
+      const confirmed = !snap.metadata || snap.metadata.fromCache === false;
+      const remote = snap.exists ? snap.data() : null;
+      const usable = isGame(remote);
+      if (usable && remote.rev > state.rev) {
+        adopt(remote);
+      } else if (confirmed) {
+        sync.sawServer = true;
+        if (usable && remote.rev === state.rev) { if (!writing && dirty) { dirty = false; saveLocal(); } }
+        else if (state.rev > 0) { dirty = true; }   // this device is ahead of the saved copy
+      }
+      if (confirmed) {
+        sync.sawServer = true;
+        sync.error = false;
+        sync.ready = true;
+        clearTimeout(giveUp);
+        if (dirty) push();
+      }
+      render();
+    }, () => {
+      clearTimeout(giveUp);
+      sync.ready = true;
+      sync.mode = 'local';
+      docRef = null;
+      render();
+    });
+  }
+
+  function statusInfo() {
+    if (sync.mode === 'checking' || (sync.mode === 'cloud' && !sync.ready)) return ['Loading', 'busy'];
+    if (sync.mode === 'local') return ['This device', ''];
+    if (sync.readOnly) return ['Watching', ''];
+    if (sync.error) return ['Offline', 'warn'];
+    if (dirty || writing) return ['Saving', 'busy'];
+    return ['Saved', 'ok'];
+  }
+  function paintStatus() {
+    const el = document.getElementById('sync-pill');
+    if (!el) return;
+    const [label, tone] = statusInfo();
+    el.textContent = label;
+    el.className = 'pill ' + tone;
+    el.hidden = sync.mode === 'local';
+  }
+  function storageNote() {
+    if (sync.mode === 'local') return 'Results are saved in this browser only, so keep the whole game on this device.';
+    if (sync.readOnly) return 'You are watching this game. Only the host can make moves.';
+    if (sync.error) return 'Can’t reach the saved game right now. Results are kept on this device and sent when the connection is back.';
+    return 'Results are saved as you go. A refresh, or a second screen signed in as you, shows the same record.';
+  }
+
+  /* ================= Icons ================= */
+  const PAROL = '<svg viewBox="0 0 48 56" aria-hidden="true"><circle cx="24" cy="22" r="19" fill="none" stroke="currentColor" stroke-width="2.6"/><path fill="currentColor" d="M24 5l4.1 11.3 12.1.5-9.5 7.4L34 35.8 24 29l-10 6.8 3.3-11.6-9.5-7.4 12.1-.5z"/><path d="M16 40.5V52M32 40.5V52" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
+  const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2l2.47 6.6 7.04.31-5.52 4.39 1.89 6.79L12 16.2l-5.88 3.89 1.89-6.79-5.52-4.39 7.04-.31z"/></svg>';
+  const BAG = '<svg viewBox="0 0 64 72" aria-hidden="true"><path d="M22 21v-7a10 10 0 0 1 20 0v7" fill="none" stroke="var(--gold-deep)" stroke-width="3.2" stroke-linecap="round"/><path d="M9 20h46l4 45a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z" fill="var(--gold)"/><path d="M26.5 39.5a6 6 0 1 1 9.2 5c-2.3 1.5-3.2 2.7-3.2 5" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/><circle cx="32.5" cy="58" r="2.7" fill="var(--ink)"/></svg>';
+  const ICON_SOUND = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.2 6a8.5 8.5 0 0 1 0 12"/></svg>';
+  const ICON_MUTE = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9.5l5 5M22 9.5l-5 5"/></svg>';
+
+  /* ================= Sound ================= */
+  let soundOn = store.get(LS_SOUND) !== 'off';
+  let actx = null;
+  function audio() {
+    if (!soundOn) return null;
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      actx = actx || new Ctx();
+      if (actx.state === 'suspended') actx.resume();
+      return actx;
+    } catch (e) { return null; }
+  }
+  function tone(freq, delay, dur, type, vol) {
+    const ac = audio(); if (!ac) return;
+    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || 'triangle';
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.16, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(ac.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  function knock(delay, vol) {
+    const ac = audio(); if (!ac) return;
+    const t = ac.currentTime + delay, len = Math.floor(ac.sampleRate * 0.035);
+    const buf = ac.createBuffer(1, len, ac.sampleRate), data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = buf; f.type = 'bandpass'; f.frequency.value = 1500 + Math.random() * 1400; f.Q.value = 1.2;
+    g.gain.value = vol || 0.3;
+    src.connect(f).connect(g).connect(ac.destination);
+    src.start(t);
+  }
+  function rattle(ms) {
+    let t = 0, gap = 45;
+    while (t < ms) { knock(t / 1000, 0.12 + Math.random() * 0.2); t += gap + Math.random() * 40; gap *= 1.07; }
+  }
+  const sfx = {
+    land() { knock(0, 0.5); tone(150, 0, 0.12, 'sine', 0.2); },
+    lucky() { [880, 1174.7, 1568].forEach((f, i) => tone(f, i * 0.09, 0.4)); },
+    jackpot() { [523.3, 659.3, 784, 1046.5, 1318.5, 1568, 2093].forEach((f, i) => tone(f, i * 0.085, 0.6, 'triangle', 0.18)); },
+  };
+  const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* not available */ } };
+
+  /* ================= Confetti ================= */
+  function confetti(big) {
+    if (reduceMotion()) return;
+    const c = document.createElement('canvas');
+    c.className = 'confetti';
+    document.body.appendChild(c);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = c.width = Math.round(window.innerWidth * dpr), H = c.height = Math.round(window.innerHeight * dpr);
+    const ctx = c.getContext('2d');
+    const css = getComputedStyle(document.documentElement);
+    const colors = ['--gold', '--ivory', '--n20', '--n50', '--n100', '--n1000'].map(v => css.getPropertyValue(v).trim());
+    const parts = Array.from({ length: big ? 170 : 70 }, () => ({
+      x: W / 2 + (Math.random() - 0.5) * W * 0.5, y: H * 0.45,
+      vx: (Math.random() - 0.5) * 16 * dpr, vy: (-6 - Math.random() * 17) * dpr,
+      s: (6 + Math.random() * 7) * dpr, r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.4,
+      c: colors[Math.floor(Math.random() * colors.length)],
+    }));
+    const life = big ? 3400 : 2300, t0 = performance.now();
+    (function frame(now) {
+      const k = (now - t0) / life;
+      if (k >= 1) { c.remove(); return; }
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalAlpha = k > 0.75 ? (1 - k) * 4 : 1;
+      for (const p of parts) {
+        p.vy += 0.5 * dpr; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+        ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+        ctx.restore();
+      }
+      requestAnimationFrame(frame);
+    })(t0);
+  }
+
+  /* ================= Views ================= */
+  let route = { name: 'home' };
+  let busy = false;              // an animation owns the screen; hold re-renders until it ends
+  const ui = { hostOpen: false, addError: '', animRound: -1 };
+
+  function dieHTML(i, face, mini) {
+    const d = DICE[i];
+    const faces = Array.from({ length: 6 }, (_, k) => {
+      const lucky = k === LUCKY_FACE, v = lucky ? d.lucky : d.base;
+      return `<div class="face f${k + 1} n${v}${lucky ? ' lucky' : ''}${v >= 1000 ? ' wide-num' : ''}">${lucky ? STAR : ''}<span>${peso(v)}</span></div>`;
+    }).join('');
+    // The legend dice sit with the lucky side facing front; game dice start on a plain side.
+    const [rx, ry] = FACE_ROT[mini ? LUCKY_FACE : face == null ? 0 : face];
+    const style = ` style="transform:rotateX(${rx}deg) rotateY(${ry}deg)"`;
+    const settled = face != null;
+    const lucky = settled && face === LUCKY_FACE;
+    return `<div class="die${mini ? ' mini' : ''}${settled ? ' settled' : ''}${lucky ? ' is-lucky' : ''}" data-die="${i}">
+      <div class="die-stage"><div class="die-glow"></div><div class="die-hop"><div class="die-tilt"><div class="cube"${style}>${faces}</div></div></div></div>
+      ${mini ? '' : `<div class="die-shadow"></div><div class="readout">${settled ? peso(lucky ? d.lucky : d.base) : ''}</div>`}
+    </div>`;
+  }
+
+  const chipHTML = (v, i) => `<span class="chip n${v}${v === DICE[i].lucky ? ' lucky' : ''}">${peso(v)}</span>`;
+
+  function header() {
+    const [label, tone] = statusInfo();
+    return `<header class="top">
+      <button class="brand" data-action="home" aria-label="Pamasko Dice, back to the record">${PAROL}<span>Pamasko Dice</span></button>
+      <div class="top-tools">
+        <span id="sync-pill" class="pill ${tone}"${sync.mode === 'local' ? ' hidden' : ''}>${label}</span>
+        <button class="icon-btn" data-action="sound" aria-pressed="${soundOn}" aria-label="Sound">${soundOn ? ICON_SOUND : ICON_MUTE}</button>
+      </div>
+    </header><div class="bulbs" aria-hidden="true"></div>`;
+  }
+
+  function viewHome() {
+    const P = state.players, f = state.finale;
+    const waiting = P.filter(p => p.status === 'waiting');
+    const done = P.filter(p => p.status !== 'waiting').sort((a, b) => worth(b) - worth(a) || a.at - b.at);
+    const rolled = P.filter(p => p.status === 'rolled');
+    const kept = P.filter(p => p.status === 'kept');
+    const locked = !sync.ready || sync.readOnly;
+    const dis = locked ? ' disabled' : '';
+
+    let next;
+    if (f) {
+      next = '<p class="note">The dice are closed. The finale has started.</p>';
+    } else {
+      const chips = waiting.map(p => `<button class="name-chip" data-action="turn" data-id="${p.id}"${dis}>${esc(p.name)}</button>`).join('');
+      const hint = !P.length
+        ? '<p class="note">Nobody’s on the list yet. Add each person who’s getting a pamasko, then pass this screen around. Everyone taps their own name when it’s their turn.</p>'
+        : (!waiting.length ? '<p class="note">Everyone on the list has played. Add a name if someone’s missing.</p>' : '');
+      next = `${chips ? `<div class="chips">${chips}</div>` : ''}${hint}
+        <form id="add-form" class="add" novalidate>
+          <label class="sr" for="new-name">Name to add</label>
+          <input id="new-name" name="name" type="text" maxlength="24" placeholder="Add a name" autocomplete="off" autocapitalize="words" enterkeyhint="done"${dis}>
+          <button class="btn ghost" type="submit"${dis}>Add</button>
+        </form>
+        ${ui.addError ? `<p class="error" role="alert">${esc(ui.addError)}</p>` : ''}`;
+    }
+
+    const rows = done.map((p, i) => {
+      const how = p.status === 'kept'
+        ? `<span class="how">Kept the ${peso(STAKE)}</span>`
+        : `<span class="how">${p.dice.map(chipHTML).join('')}</span>`;
+      const amt = tookBag(p)
+        ? `<span class="amt bagged"><s>${peso(p.total)}</s><span>Mystery Bag</span></span>`
+        : `<span class="amt${worth(p) > STAKE ? ' up' : ''}">${peso(worth(p))}</span>`;
+      return `<li class="row"><span class="rank">${i + 1}</span><span class="who"><b>${esc(p.name)}</b>${how}</span>${amt}</li>`;
+    }).join('');
+    const record = done.length
+      ? `<ol class="record">${rows}</ol><p class="fine">${done.length} of ${P.length} have played.</p>`
+      : '<p class="note">Results land here as each person keeps their money or rolls.</p>';
+
+    let fin;
+    if (f) {
+      const open = !!f.pending || f.picked.some(id => !f.decisions[id]);
+      fin = `<p>${open ? 'The finale is under way.' : 'The finale is done. Maligayang Pasko!'}</p>
+        <button class="btn primary" data-action="finale">${open ? 'Continue the finale' : 'See the finale'}</button>`;
+    } else {
+      fin = `<p>When everyone’s done, the two lowest rollers get to keep their winnings or hand them back for a Mystery Bag. Ties are settled with a roll-off.</p>
+        ${waiting.length && rolled.length ? `<p class="note">Still to play: ${esc(list(waiting.map(p => p.name)))}.</p>` : ''}
+        <button class="btn primary" data-action="start-finale" data-confirm="Tap again. This closes the dice."${rolled.length && !locked ? '' : ' disabled'}>Reveal the two lowest</button>
+        ${rolled.length ? '' : '<p class="fine">Opens once someone has rolled.</p>'}`;
+    }
+
+    const paid = rolled.filter(p => !tookBag(p)).reduce((s, p) => s + p.total, 0);
+    const bags = rolled.filter(tookBag).length;
+    const manage = P.map(p => {
+      const what = p.status === 'waiting' ? 'Hasn’t played' : p.status === 'kept' ? `Kept ${peso(STAKE)}` : `Rolled ${peso(p.total)}`;
+      const lock = f || locked ? ' disabled' : '';
+      return `<li><span class="m-name"><b>${esc(p.name)}</b><small>${what}</small></span><span class="m-acts">
+        ${p.status !== 'waiting' ? `<button class="btn quiet" data-action="redo" data-id="${p.id}" data-confirm="Tap again to clear this turn"${lock}>Redo turn</button>` : ''}
+        <button class="btn quiet" data-action="remove" data-id="${p.id}" data-confirm="Tap again to remove"${lock}>Remove</button>
+      </span></li>`;
+    }).join('');
+    const host = `<details class="host"${ui.hostOpen ? ' open' : ''}>
+      <summary>Host tools</summary>
+      <div class="host-body">
+        <dl class="tally">
+          <div><dt>Winnings to pay out</dt><dd>${peso(paid)}</dd></div>
+          <div><dt>${peso(STAKE)}s handed back to you</dt><dd>${rolled.length} × ${peso(STAKE)} = ${peso(rolled.length * STAKE)}</dd></div>
+          <div><dt>Kept their ${peso(STAKE)}</dt><dd>${kept.length}</dd></div>
+          <div><dt>Mystery Bags taken</dt><dd>${bags}</dd></div>
+        </dl>
+        ${manage ? `<ul class="manage">${manage}</ul>` : ''}
+        ${f ? '<p class="fine">Undo the finale to change or remove a turn.</p>' : ''}
+        <div class="danger">
+          ${f ? `<button class="btn quiet" data-action="undo-finale" data-confirm="Tap again to undo the finale"${dis}>Undo the finale</button>` : ''}
+          <button class="btn quiet" data-action="reset" data-confirm="Tap again to erase everything"${dis}>Erase everything and start over</button>
+        </div>
+        <p class="fine">${storageNote()}</p>
+      </div>
+    </details>`;
+
+    return `<p class="lede">Everyone starts with ${peso(STAKE)}. Keep it, or hand it back and roll three dice for whatever they show.</p>
+      <section class="sec"><h2>Who’s next?</h2>${next}</section>
+      <section class="sec"><h2>The record</h2>${record}</section>
+      <section class="card"><div class="card-head">${BAG}<h2>One more choice for the two lowest</h2></div>${fin}</section>
+      ${host}`;
+  }
+
+  function viewChoice(p) {
+    const legend = DICE.map((d, i) => `<li>${dieHTML(i, null, true)}<span><b>Die ${i + 1}</b>Five sides pay ${peso(d.base)}. One lucky side pays ${peso(d.lucky)}.</span></li>`).join('');
+    return `<section class="choice">
+      <button class="back" data-action="home">‹ Not my turn</button>
+      <h1>${esc(p.name)}, this ${peso(STAKE)} is yours.</h1>
+      <div class="option">
+        <h2>Keep it</h2>
+        <p>Walk away with ${peso(STAKE)}. No dice.</p>
+        <button class="btn ghost wide" data-action="keep" data-id="${p.id}" data-confirm="Tap again to lock in ${peso(STAKE)}">Keep the ${peso(STAKE)}</button>
+      </div>
+      <div class="or">or</div>
+      <div class="option raised">
+        <h2>Hand it back and roll</h2>
+        <p>You take home whatever the three dice show: ${peso(MIN_TOTAL)} at the least, ${peso(MAX_TOTAL)} at the most.</p>
+        <ul class="legend">${legend}</ul>
+        <button class="btn primary wide" data-action="to-roll" data-id="${p.id}">Hand it back and roll</button>
+      </div>
+    </section>`;
+  }
+
+  function verdict(p) {
+    const lucky = p.dice.map((v, i) => v === DICE[i].lucky);
+    const n = lucky.filter(Boolean).length;
+    if (n === 3) return 'All three lucky sides. Unreal.';
+    if (lucky[2]) return n === 2 ? `The ${peso(DICE[2].lucky)} side, and another lucky one on top!` : `The ${peso(DICE[2].lucky)} side!`;
+    const tail = ' The two lowest rollers get one more choice at the end.';
+    if (n === 2) return 'Two lucky sides.' + tail;
+    if (n === 1) return 'One lucky side.' + tail;
+    return 'No lucky sides this time.' + tail;
+  }
+
+  function resultHTML(p, counting) {
+    return `<div class="result" aria-live="polite">
+      <p class="sum">${p.dice.map(peso).join(' + ')}</p>
+      <p class="total"><span class="total-label">${esc(p.name)} takes home</span><span class="total-amt">${peso(counting ? 0 : p.total)}</span></p>
+      <p class="verdict">${verdict(p)}</p>
+      <button class="btn primary wide" data-action="home">Pass it on</button>
+    </div>`;
+  }
+
+  function viewRoll(p) {
+    if (p.status === 'rolled') {
+      return `<section class="roll">
+        <h1>${esc(p.name)}</h1>
+        <div class="tray">${p.faces.map((fc, i) => dieHTML(i, fc)).join('')}</div>
+        ${resultHTML(p, false)}
+      </section>`;
+    }
+    return `<section class="roll is-ready" data-action="roll">
+      <button class="back" data-action="turn" data-id="${p.id}">‹ Changed my mind</button>
+      <h1>${esc(p.name)}, tap anywhere to roll</h1>
+      <div class="tray">${DICE.map((d, i) => dieHTML(i, null)).join('')}</div>
+      <div class="roll-cta">
+        <button class="btn primary" data-action="roll">Roll the dice</button>
+        <p class="fine">No take-backs once the dice are out.</p>
+      </div>
+    </section>`;
+  }
+
+  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  const pipCells = n => Array.from({ length: 9 }, (_, i) => `<i${PIPS[n].includes(i) ? ' class="on"' : ''}></i>`).join('');
+  const pipDie = n => `<span class="pip-die" role="img" aria-label="Rolled ${n}">${pipCells(n)}</span>`;
+  const spots = n => n === 1 ? 'one Mystery Bag spot' : `${n} Mystery Bag spots`;
+
+  function viewFinale() {
+    const f = state.finale;
+    const nameOf = id => { const p = player(id); return p ? p.name : 'Someone'; };
+    const anim = ui.animRound;
+    const locked = !sync.ready || sync.readOnly;
+    const dis = locked ? ' disabled' : '';
+    let html = `<section class="finale">
+      <button class="back" data-action="home">‹ The record</button>
+      <h1>${f.slots === 1 ? 'The lowest roller' : 'The two lowest'}</h1>`;
+
+    f.rounds.forEach((r, n) => {
+      const live = anim === n;
+      const cells = r.ids.map(id => {
+        const st = r.in.includes(id) ? ['in', 'Gets the offer'] : r.tied.includes(id) ? ['again', 'Rolls again'] : ['out', 'Out'];
+        return `<li class="contender${live ? '' : ' ' + st[0]}">${pipDie(r.rolls[id])}<b>${esc(nameOf(id))}</b><span class="tag">${live ? '' : st[1]}</span></li>`;
+      }).join('');
+      html += `<div class="round" data-round="${n}">
+        <h2>Roll-off ${n + 1}</h2>
+        <p class="fine">${r.ids.length} tied for ${spots(r.slots)}. The lowest ${r.slots === 1 ? 'roll gets' : 'rolls get'} the offer.</p>
+        <ul class="contenders">${cells}</ul>
+      </div>`;
+    });
+
+    if (anim >= 0) return html + '</section>';
+
+    if (f.pending) {
+      const names = f.pending.ids.map(nameOf);
+      const tiedAt = player(f.pending.ids[0]);
+      const already = f.picked.length ? `<p class="note">Already in: ${esc(list(f.picked.map(nameOf)))}.</p>` : '';
+      html += `${already}<div class="round">
+        <p><b>${esc(list(names))}</b> are ${f.rounds.length ? 'still tied' : `tied at ${peso(tiedAt ? tiedAt.total : MIN_TOTAL)}`}, with ${spots(f.pending.slots)} left. Each rolls one die. The lowest ${f.pending.slots === 1 ? 'roll gets' : 'rolls get'} the offer.</p>
+        <button class="btn primary wide" data-action="roll-off"${dis}>${f.rounds.length ? 'Roll again' : 'Roll off'}</button>
+      </div>`;
+      return html + '</section>';
+    }
+
+    html += f.picked.map(id => {
+      const p = player(id);
+      if (!p) return '';
+      const d = f.decisions[id];
+      if (d) {
+        return `<div class="offer done"><div class="offer-head">${d === 'bag' ? BAG : ''}<div><h2>${esc(p.name)}</h2>
+          <p>${d === 'bag' ? `Handed back ${peso(p.total)} for the Mystery Bag.` : `Kept the ${peso(p.total)}.`}</p></div></div></div>`;
+      }
+      return `<div class="offer"><div class="offer-head">${BAG}<div><h2>${esc(p.name)}, you rolled ${peso(p.total)}</h2>
+        <p>Keep it, or hand it back for a Mystery Bag. Nobody knows what’s inside.</p></div></div>
+        <div class="offer-acts">
+          <button class="btn ghost" data-action="decide" data-id="${id}" data-choice="cash" data-confirm="Tap again to keep ${peso(p.total)}"${dis}>Keep ${peso(p.total)}</button>
+          <button class="btn primary" data-action="decide" data-id="${id}" data-choice="bag" data-confirm="Tap again to take the bag"${dis}>Take the Mystery Bag</button>
+        </div></div>`;
+    }).join('');
+
+    if (f.picked.length && f.picked.every(id => f.decisions[id])) {
+      html += '<p class="closing">That’s the game. Maligayang Pasko!</p><button class="btn ghost wide" data-action="home">Back to the record</button>';
+    }
+    return html + '</section>';
+  }
+
+  function render() {
+    if (busy) return;
+    const old = document.getElementById('new-name');
+    const typed = old ? old.value : '';
+    const hadFocus = !!old && document.activeElement === old;
+
+    let body;
+    const p = route.id ? player(route.id) : null;
+    if (route.name === 'choice' && p && p.status === 'waiting' && !state.finale) body = viewChoice(p);
+    else if (route.name === 'roll' && p && (p.status === 'rolled' || (p.status === 'waiting' && !state.finale))) body = viewRoll(p);
+    else if (route.name === 'finale' && state.finale) body = viewFinale();
+    else { route = { name: 'home' }; body = viewHome(); }
+    $app.innerHTML = header() + body;
+
+    const input = document.getElementById('new-name');
+    if (input) { input.value = typed; if (hadFocus) input.focus(); }
+  }
+  function go(r) { route = r; ui.addError = ''; render(); window.scrollTo(0, 0); }
+
+  /* ================= The roll ================= */
+  function playRoll(p) {
+    busy = true;
+    const root = $app.querySelector('.roll');
+    const still = reduceMotion();
+    const durs = still ? [150, 400, 650] : [1500, 2400, 3400];
+    root.classList.remove('is-ready');
+    root.removeAttribute('data-action');
+    root.querySelectorAll('.back, .roll-cta').forEach(el => el.remove());
+    root.querySelector('h1').textContent = p.name;
+    if (!still) rattle(durs[2] - 250);
+    buzz(40);
+
+    root.querySelectorAll('.die').forEach((el, i) => {
+      const cube = el.querySelector('.cube');
+      const [bx, by] = FACE_ROT[p.faces[i]];
+      el.style.setProperty('--dur', durs[i] + 'ms');
+      el.classList.add('rolling');
+      cube.getBoundingClientRect();          // commit the start pose before the tumble begins
+      cube.style.transform = `rotateX(${bx + 360 * (3 + i)}deg) rotateY(${by + 360 * (2 + i) * (i % 2 ? -1 : 1)}deg)`;
+      setTimeout(() => {
+        const lucky = p.faces[i] === LUCKY_FACE;
+        el.classList.remove('rolling');
+        el.classList.add('settled');
+        if (lucky) el.classList.add('is-lucky');
+        el.querySelector('.readout').textContent = peso(p.dice[i]);
+        sfx.land(); buzz(25);
+        if (lucky && i < 2) sfx.lucky();
+        if (i === 2) setTimeout(() => showTotal(p, root), still ? 100 : 500);
+      }, durs[i] + 60);
+    });
+  }
+
+  function showTotal(p, root) {
+    const jackpot = p.faces[2] === LUCKY_FACE;
+    const anyLucky = p.faces.includes(LUCKY_FACE);
+    root.insertAdjacentHTML('beforeend', resultHTML(p, true));
+    const amt = root.querySelector('.total-amt');
+    if (jackpot) { sfx.jackpot(); buzz([60, 40, 60, 40, 160]); confetti(true); }
+    else if (anyLucky) { sfx.lucky(); confetti(false); }
+    const finish = () => { amt.textContent = peso(p.total); busy = false; render(); };
+    if (reduceMotion()) { finish(); return; }
+    const ms = jackpot ? 1300 : 650, t0 = performance.now();
+    (function step(now) {
+      const k = Math.min(1, (now - t0) / ms);
+      amt.textContent = peso(p.total * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(step); else finish();
+    })(t0);
+  }
+
+  /* ================= The finale ================= */
+  function startFinale(s) {
+    const rolled = s.players.filter(p => p.status === 'rolled').sort((a, b) => a.total - b.total || a.at - b.at);
+    const slots = Math.min(BAG_SLOTS, rolled.length);
+    const picked = [];
+    let pending = null, i = 0;
+    while (picked.length < slots && i < rolled.length) {
+      const group = rolled.filter(p => p.total === rolled[i].total);
+      const room = slots - picked.length;
+      if (group.length <= room) picked.push(...group.map(p => p.id));
+      else { pending = { ids: group.map(p => p.id), slots: room }; break; }
+      i += group.length;
+    }
+    s.finale = { slots, picked, pending, rounds: [], decisions: {} };
+  }
+
+  /** One roll-off round: everyone still tied rolls a die, lowest rolls take the open spots. */
+  function rollOff(s) {
+    const f = s.finale, pend = f.pending, k = pend.slots;
+    const rolls = {};
+    pend.ids.forEach(id => { rolls[id] = rollFace() + 1; });
+    const order = pend.ids.slice().sort((a, b) => rolls[a] - rolls[b]);
+    const cut = rolls[order[k - 1]];
+    let winners, tied;
+    if (cut < rolls[order[k]]) { winners = order.slice(0, k); tied = []; }
+    else { winners = order.filter(id => rolls[id] < cut); tied = order.filter(id => rolls[id] === cut); }
+    f.rounds.push({ ids: pend.ids.slice(), slots: k, rolls, in: winners, tied });
+    f.picked.push(...winners);
+    f.pending = tied.length ? { ids: tied, slots: k - winners.length } : null;
+  }
+
+  function playRollOff() {
+    const n = state.finale.rounds.length - 1;
+    ui.animRound = n;
+    render();
+    const done = () => { busy = false; ui.animRound = -1; render(); sfx.land(); buzz(30); };
+    if (reduceMotion()) { done(); return; }
+    busy = true;
+    rattle(900);
+    const dice = [...$app.querySelectorAll(`[data-round="${n}"] .pip-die`)];
+    const finals = dice.map(d => d.innerHTML);
+    const tick = setInterval(() => dice.forEach(d => { d.innerHTML = pipCells(1 + Math.floor(Math.random() * 6)); }), 80);
+    setTimeout(() => { clearInterval(tick); dice.forEach((d, i) => { d.innerHTML = finals[i]; }); setTimeout(done, 350); }, 1000);
+    const card = $app.querySelector(`[data-round="${n}"]`);
+    if (card && card.scrollIntoView) card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  /* ================= Actions ================= */
+  const actions = {
+    home() { go({ name: 'home' }); },
+    sound() {
+      soundOn = !soundOn;
+      store.set(LS_SOUND, soundOn ? 'on' : 'off');
+      if (soundOn) tone(880, 0, 0.15);
+      if (!busy) render();
+    },
+    turn(el) { go({ name: 'choice', id: el.dataset.id }); },
+    'to-roll'(el) { go({ name: 'roll', id: el.dataset.id }); },
+    keep(el) {
+      const id = el.dataset.id;
+      commit(s => { const p = s.players.find(x => x.id === id); if (p && p.status === 'waiting') Object.assign(p, { status: 'kept', total: STAKE, at: Date.now() }); });
+      go({ name: 'home' });
+    },
+    roll() {
+      if (busy) return;
+      const p = player(route.id);
+      if (!p || p.status !== 'waiting' || state.finale) return;
+      const faces = [rollFace(), rollFace(), rollFace()];
+      const dice = faces.map((fc, i) => fc === LUCKY_FACE ? DICE[i].lucky : DICE[i].base);
+      const total = dice.reduce((a, b) => a + b, 0);
+      // The result is saved the instant the screen is tapped; the tumble only reveals it.
+      const saved = commit(s => Object.assign(s.players.find(x => x.id === p.id), { status: 'rolled', faces, dice, total, at: Date.now() }));
+      if (saved) playRoll(player(p.id));
+    },
+    redo(el) {
+      const id = el.dataset.id;
+      commit(s => { const p = s.players.find(x => x.id === id); if (p && !s.finale) Object.assign(p, { status: 'waiting', faces: null, dice: null, total: null }); });
+      render();
+    },
+    remove(el) {
+      const id = el.dataset.id;
+      commit(s => { if (!s.finale) s.players = s.players.filter(x => x.id !== id); });
+      render();
+    },
+    reset() {
+      commit(s => { s.players = []; s.finale = null; });
+      ui.addError = '';
+      go({ name: 'home' });
+    },
+    'start-finale'() {
+      if (state.finale || !state.players.some(p => p.status === 'rolled')) return;
+      if (commit(startFinale)) go({ name: 'finale' });
+    },
+    finale() { go({ name: 'finale' }); },
+    'undo-finale'() { commit(s => { s.finale = null; }); render(); },
+    'roll-off'() {
+      if (busy || !state.finale || !state.finale.pending) return;
+      if (commit(rollOff)) playRollOff();
+    },
+    decide(el) {
+      const { id, choice } = el.dataset;
+      if (!state.finale || state.finale.pending || state.finale.decisions[id]) return;
+      const took = choice === 'bag';
+      if (commit(s => { s.finale.decisions[id] = took ? 'bag' : 'cash'; })) {
+        if (took) { sfx.lucky(); confetti(false); }
+        render();
+      }
+    },
+  };
+
+  function addPlayer() {
+    const input = document.getElementById('new-name');
+    if (!input) return;
+    const name = input.value.replace(/\s+/g, ' ').trim().slice(0, 24);
+    if (!name) { input.focus(); return; }
+    if (state.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+      ui.addError = `${name} is already on the list. Add an initial to tell them apart.`;
+      render();
+      return;
+    }
+    if (!commit(s => s.players.push({ id: newId(), name, status: 'waiting', faces: null, dice: null, total: null, at: Date.now() }))) return;
+    ui.addError = '';
+    input.value = '';
+    render();
+  }
+
+  /* Two-tap confirm for anything that can't be taken back (the page can't show confirm dialogs). */
+  let armedAt = 0;
+  function disarm(el) {
+    clearTimeout(el._timer);
+    if (!el.isConnected || !el.classList.contains('armed')) return;
+    el.classList.remove('armed');
+    el.innerHTML = el._label;
+  }
+  function arm(el) {
+    $app.querySelectorAll('.armed').forEach(disarm);
+    el._label = el.innerHTML;
+    el.classList.add('armed');
+    el.textContent = el.dataset.confirm;
+    armedAt = Date.now();
+    el._timer = setTimeout(() => disarm(el), 4500);
+  }
+
+  $app.addEventListener('click', e => {
+    const el = e.target.closest('[data-action]');
+    if (!el || el.disabled) return;
+    if (el.dataset.confirm) {
+      if (!el.classList.contains('armed')) { arm(el); return; }
+      if (Date.now() - armedAt < 400) return;   // ignore an accidental double tap
+    }
+    const run = actions[el.dataset.action];
+    if (run) run(el);
+  });
+  $app.addEventListener('submit', e => {
+    if (e.target.id === 'add-form') { e.preventDefault(); addPlayer(); }
+  });
+  $app.addEventListener('toggle', e => {
+    if (e.target.classList && e.target.classList.contains('host')) ui.hostOpen = e.target.open;
+  }, true);
+
+  // Keep the screen awake while the phone is passed around, where the browser allows it.
+  let wake = null;
+  async function stayAwake() {
+    try { if (navigator.wakeLock && !wake) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) { /* fine without it */ }
+  }
+  document.addEventListener('pointerdown', stayAwake, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && wake === null) stayAwake(); });
+
+  render();
+  if (hasHost) connect();
+})();
+</script>
