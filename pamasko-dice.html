@@ -1186,8 +1186,7 @@
   // What the announcer says. Short, warm, a little cheeky.
   const lines = {
     pickOpen: first => first
-      ? oneOf(['Who goes first? Tonight, the first player keeps the three hundred... and rolls for free. Spin the wheel!',
-        'Let’s find our first player. Whoever it is keeps the three hundred, and rolls anyway. Spin it!'])
+      ? oneOf(['Who goes first? Spin the wheel.', 'Let’s find our first player. Spin it!'])
       : oneOf(['Who’s next? Spin the wheel.', 'Let’s see who’s up next. Spin it!', 'Next player. The wheel decides.']),
     turnFirst: n => oneOf([`${n}! You go first. So for you, no question. Pera... AT kapalaran! Keep the three hundred, and roll for free.`,
       `${n} goes first! And the first player gets both. Pera... AT kapalaran! The three hundred is yours. Now roll.`]),
@@ -1302,7 +1301,7 @@
   /* ================= Views ================= */
   let route = { name: 'home' };
   let busy = false;              // an animation owns the screen; hold re-renders until it ends
-  const ui = { hostOpen: false, sidesOpen: false, addError: '', animRound: -1, enter: true, fresh: null, qr: '', pending: null };
+  const ui = { hostOpen: false, sidesOpen: false, addError: '', animRound: -1, enter: true, fresh: null, qr: '', pending: null, perkTold: false };
   const canFull = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
   let introSeen = store.get(LS_INTRO) === '1';
 
@@ -1432,7 +1431,7 @@
         : (!waiting.length ? '<p class="note">Everyone on the list has played. Add a name if someone’s missing.</p>' : '');
       const spinNext = waiting.length
         ? `<div class="spin-next"><button class="btn primary big" data-action="pick"${dis}>${waiting.length > 1 ? (done.length ? 'Spin for the next player' : 'Spin for the first player') : `Last up: ${esc(waiting[0].name)}`}</button>
-            ${done.length ? '' : perkHTML()}
+            ${!done.length && ui.perkTold ? perkHTML() : ''}
             ${waiting.length > 1 ? '<p class="fine">The wheel decides the order, so everyone has the same chance at the roulette prizes.</p>' : ''}</div>` : '';
       next = `${spinNext}${chips ? `<div class="chips">${chips}</div>` : ''}${hint}
         <form id="add-form" class="add" novalidate>
@@ -1554,7 +1553,7 @@
       ${host}`;
   }
 
-  /** What the first player of the night gets. */
+  /** What the first player of the night gets. Kept off the screen until the surprise has been sprung. */
   const perkHTML = () => `<p class="perk">${STAR_ICON}<span>First player keeps the ${peso(STAKE)} <b>and</b> rolls for free.</span></p>`;
 
   function viewPick() {
@@ -1563,7 +1562,7 @@
     return `<section class="pick">
       <button class="back" data-action="home">‹ The record</button>
       <h1>${first ? 'Who goes first?' : 'Who’s next?'}</h1>
-      ${first ? perkHTML() : ''}
+      ${first && ui.perkTold ? perkHTML() : ''}
       <div class="wheel ready" data-action="pick-spin">${nameWheelSVG(waiting.map(p => p.name), 0)}</div>
       ${phoneOn() ? '<p class="hint">Swing the phone down to spin.</p><button class="btn ghost" data-action="pick-spin">Or spin from this screen</button>' : '<button class="btn primary big" data-action="pick-spin">Spin the wheel</button>'}
       <p class="fine">${waiting.length} still to play. Every name has the same chance.</p>
@@ -1779,7 +1778,7 @@
 
     const input = document.getElementById('new-name');
     if (input) { input.value = typed; if (hadFocus) input.focus(); }
-    wheelWaiting = route.name === 'pick' ? power => actions['pick-spin'](power) : null;     // a swing of the dice phone spins it too
+    wheelWaiting = route.name === 'pick' && !showing ? power => actions['pick-spin'](power) : null;     // a swing of the dice phone spins it too
     tellPhone();
   }
   function go(r, keepFresh) {
@@ -1894,6 +1893,27 @@
         vo: 'So. Phones down. Prayers up. Let’s play... Rivera Royale!' },
     ];
   }
+  /* The first player's surprise. Nobody is told beforehand: the first person called up is asked the usual
+     question, and then the show interrupts itself to say they get the cash and the roll. */
+  function startSurprise(p) {
+    const n = p.name;
+    const bill = `<div class="bill"><small>Pamasko</small>${peso(STAKE)}</div>`;
+    const dice = `<div class="show-dice">${DICE.map((d, i) => dieHTML(i, null, 'tumble')).join('')}</div>`;
+    playShow([
+      { kicker: 'First up', big: `${n}: Pera o Kapalaran?`, art: `<div class="versus">${bill}<i>o</i>${dice}</div>`,
+        vo: `${n}, come on down! You are first. One question. Pera... o kapalaran?` },
+      { dark: true, cls: 'flicker', big: 'But wait…', sound: 'rumble', vo: 'But wait. Don’t answer yet.' },
+      { dark: true, kicker: 'A surprise from RJ', big: 'The first player gets both', art: '<div class="medal">RJ</div>',
+        vo: `RJ has a surprise. ${n} is our very first player tonight. And the first player... gets both.` },
+      { kicker: `${n} keeps the ${peso(STAKE)} and rolls for free`, big: 'Pera AT Kapalaran!', foil: true, art: `<div class="versus">${bill}<i>at</i>${dice}</div>`, sound: 'fanfare', party: true,
+        vo: 'Pera... AT kapalaran! Keep the three hundred. And roll for free. Everybody else... you should have gone first.' },
+    ], 'A surprise for the first player', () => {
+      ui.perkTold = true;
+      go({ name: 'choice', id: p.id });
+      sfx.slam();
+    });
+  }
+
   function startIntro() {
     playShow(introBeats(), 'Rivera Royale show intro', () => {
       introSeen = true;
@@ -2539,7 +2559,6 @@
       else if (s.left > 0) {
         kicker = s.first ? 'Who goes first?' : 'Who’s next?';
         big = s.left === 1 ? `Last up: ${s.last}` : s.first ? 'First player' : 'Next player';
-        if (s.first) sub = `The first player keeps the ${peso(STAKE)} and rolls for free.`;
         btn = ['pick', s.left === 1 ? `Call ${s.last}` : s.first ? 'Spin for the first player' : 'Spin for the next player'];
       }
       else { big = 'Wait for the host'; sub = 'Nothing to do here just now.'; }
@@ -2717,6 +2736,8 @@
     'voice-test'() { voice.say(lines.test()); },
     turn(el) {
       const p = player(el.dataset.id);
+      // The very first call-up of the night springs the surprise before the question is ever answered.
+      if (p && p.status === 'waiting' && firstUp(state) && !ui.perkTold && !showing) { startSurprise(p); return; }
       go({ name: 'choice', id: el.dataset.id });
       if (p && route.name === 'choice') { sfx.slam(); voice.say(firstUp(state) ? lines.turnFirst(p.name) : lines.turn(p.name)); }
     },
@@ -2803,6 +2824,7 @@
       render();
     },
     'clear-results'() {
+      ui.perkTold = false;
       commit(s => {
         s.finale = null;
         s.players.forEach(p => { Object.assign(p, { status: 'waiting', faces: null, dice: null, total: null }); delete p.wheel; delete p.rolls; delete p.bonus; delete p.r; });
@@ -2810,6 +2832,7 @@
       go({ name: 'home' });
     },
     reset() {
+      ui.perkTold = false;
       commit(s => { if (s.players.length) s.lastRoster = s.players.map(p => p.name); s.players = []; s.finale = null; });
       go({ name: 'home' });
     },

@@ -7,9 +7,11 @@ Each person is called up and asked one question: **Pera o Kapalaran?**
 - **Pera**: take the ₱300.
 - **Kapalaran**: leave the ₱300 and roll three dice for whatever they add up to.
 
-**The first player gets both.** Whoever goes first is not asked: they keep the ₱300 *and* roll
-for free ("Pera AT Kapalaran!"). The lobby, the name wheel and the announcer all say so before the
-first spin, so everyone hopes the wheel picks them.
+**The first player gets both (a surprise).** Nothing on screen mentions this beforehand. When the
+first person of the night is called up, the show asks the usual question, then interrupts itself:
+"But wait… the first player gets both." They keep the ₱300 *and* roll for free ("Pera AT
+Kapalaran!"). The sequence can be stepped through or skipped with the buttons at the bottom right.
+Clearing the results (after a practice round, say) arms the surprise again.
 
 | Die | Its six sides (the last is the gold star side) |
 | --- | --- |
@@ -50,8 +52,9 @@ that person would have rolled anyway, or about ₱400 if they would have taken P
 2. Tap **Spin for the first player** (after the first turn it reads **Spin for the next
    player**). A wheel of the waiting names decides who is up, so the order is fair (roulette
    prizes can only be won once, which favours going early). The person it lands on is called up
-   and taps Pera or Kapalaran; the first one of the night just taps **Roll for free**. Host tools
-   can still call someone up by hand, and whoever plays first that way gets the same bonus.
+   and taps Pera or Kapalaran; the first one of the night gets the surprise and then just taps
+   **Roll for free**. Host tools can still call someone up by hand, and whoever plays first that
+   way gets the same surprise.
 3. On the dice stage, tap anywhere to throw, or hold the screen to shake first.
 4. When everyone is done, tap **End the show** and let the ending play.
 
