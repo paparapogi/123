@@ -695,6 +695,7 @@
         ${f ? '<p class="fine">Undo the finale to change or remove a turn.</p>' : ''}
         <div class="danger">
           ${f ? `<button class="btn quiet" data-action="undo-finale" data-confirm="Tap again to undo the finale"${dis}>Undo the finale</button>` : ''}
+          ${done.length || f ? `<button class="btn quiet" data-action="clear-results" data-confirm="Tap again to clear all results"${dis}>Clear results, keep the names</button>` : ''}
           <button class="btn quiet" data-action="reset" data-confirm="Tap again to erase everything"${dis}>Erase everything and start over</button>
         </div>
         <p class="fine">${storageNote()}</p>
@@ -982,6 +983,13 @@
       const id = el.dataset.id;
       commit(s => { if (!s.finale) s.players = s.players.filter(x => x.id !== id); });
       render();
+    },
+    'clear-results'() {
+      commit(s => {
+        s.finale = null;
+        s.players.forEach(p => Object.assign(p, { status: 'waiting', faces: null, dice: null, total: null }));
+      });
+      go({ name: 'home' });
     },
     reset() {
       commit(s => { s.players = []; s.finale = null; });

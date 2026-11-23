@@ -22,7 +22,8 @@ roll-off (each tied player rolls one die, lowest roll gets the offer).
 3. When everyone is done, tap **Reveal the two lowest** and follow the finale.
 
 **Host tools** at the bottom of the home screen shows how much to pay out, and lets you redo a
-turn, remove a name, undo the finale, or erase everything (use that after a practice round).
+turn, remove a name, undo the finale, clear all results while keeping the names (use that after a
+practice round), or erase everything.
 
 ## Files
 
