@@ -40,7 +40,8 @@ reveal it.
 
 **Host tools** at the bottom of the lobby shows what to pay out, lets you pick and test the
 announcer's voice, replay the intro, redo or remove a turn, undo the ending, clear all results
-while keeping the names (use that after a practice round), or erase everything. It only shows who
+while keeping the names (use that after a practice round), or delete all names and results. If the
+names are deleted by mistake, the empty lobby offers to bring the last list back. It only shows who
 got the lowest-roller bag after the surprise has been revealed.
 
 **Voiceover.** The announcer speaks in a Claude voice when the page is opened as a Claude artifact

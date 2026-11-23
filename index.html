@@ -1354,8 +1354,9 @@
       next = '<p class="note">The dice are closed. The show has ended.</p>';
     } else {
       const chips = waiting.map(p => `<span class="name-chip">${esc(p.name)}</span>`).join('');
+      const lost = !P.length && Array.isArray(state.lastRoster) ? state.lastRoster.length : 0;
       const hint = !P.length
-        ? '<p class="note">Nobody’s on the list yet. Add everyone who’s playing, then spin to see who goes first.</p>'
+        ? `<p class="note">Nobody’s on the list yet. Add everyone who’s playing, then spin to see who goes first.</p>${lost ? `<div><button class="btn ghost" data-action="restore-names"${dis}>Bring back the last list (${lost} ${lost === 1 ? 'name' : 'names'})</button></div>` : ''}`
         : (!waiting.length ? '<p class="note">Everyone on the list has played. Add a name if someone’s missing.</p>' : '');
       const spinNext = waiting.length
         ? `<div class="spin-next"><button class="btn primary big" data-action="pick"${dis}>${waiting.length > 1 ? 'Spin for the next player' : `Last up: ${esc(waiting[0].name)}`}</button>
@@ -1455,9 +1456,9 @@
         <div class="danger">
           ${f ? `<button class="btn quiet" data-action="undo-finale" data-confirm="Tap again to undo the ending"${dis}>Undo the ending</button>` : ''}
           ${done.length || f ? `<button class="btn quiet" data-action="clear-results" data-confirm="Tap again to clear all results"${dis}>Clear results, keep the names</button>` : ''}
-          <button class="btn quiet" data-action="reset" data-confirm="Tap again to erase everything"${dis}>Erase everything and start over</button>
         </div>
         <p class="fine">${storageNote()}</p>
+        <div class="danger"><button class="btn quiet" data-action="reset" data-confirm="Tap again. This deletes the names too."${dis}>Delete all names and results</button></div>
       </div>
     </details>`;
 
@@ -2680,8 +2681,17 @@
       go({ name: 'home' });
     },
     reset() {
-      commit(s => { s.players = []; s.finale = null; });
+      commit(s => { if (s.players.length) s.lastRoster = s.players.map(p => p.name); s.players = []; s.finale = null; });
       go({ name: 'home' });
+    },
+    'restore-names'() {
+      const back = Array.isArray(state.lastRoster) ? state.lastRoster : [];
+      if (!back.length || state.players.length) return;
+      commit(s => {
+        s.players = back.map((name, i) => ({ id: newId() + i, name, status: 'waiting', faces: null, dice: null, total: null, at: Date.now() + i }));
+        delete s.lastRoster;
+      });
+      render();
     },
     'start-finale'() {
       if (state.finale || !state.players.some(p => p.status !== 'waiting')) return;
