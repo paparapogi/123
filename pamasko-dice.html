@@ -619,18 +619,13 @@
   .ctl-pick.armed, .ctl-pick.fate.armed { background: var(--ruby); color: #fff; border-color: transparent; box-shadow: 0 .3rem 0 var(--ruby-deep); }
   .ctl-pick.armed b { font-size: clamp(1.8rem, 9.5vmin, 3.4rem); }
   .ctl-pick.armed span { color: #fff; opacity: .9; }
-  .pull { --pull: 0; position: relative; display: flex; justify-content: center; gap: 1rem; touch-action: none; cursor: grab; padding: .5rem 2.5rem; }
-  .pull-track { position: relative; width: 6rem; height: clamp(13rem, 42vh, 22rem); border-radius: 3rem; background: rgba(0, 0, 0, .4); border: 2px solid var(--line-strong); box-shadow: inset 0 .4rem 1.2rem rgba(0, 0, 0, .6); }
-  .pull-fill { position: absolute; left: 0; right: 0; top: 0; height: calc(3rem + var(--pull) * (100% - 6rem)); border-radius: 3rem 3rem 0 0; background: linear-gradient(180deg, rgba(242, 192, 74, 0), rgba(242, 192, 74, .45)); }
-  .pull-knob { position: absolute; left: -2px; top: -2px; width: 6rem; height: 6rem; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, var(--gold-light), var(--gold) 60%, var(--gold-deep)); box-shadow: 0 .4rem .9rem rgba(0, 0, 0, .5), 0 0 1.6rem rgba(242, 192, 74, .45); transition: transform .28s cubic-bezier(.3, 1.6, .5, 1); }
-  .pull.pulling { cursor: grabbing; }
-  .pull.pulling .pull-knob { transition: none; }
-  .pull-knob svg { width: 3.4rem; height: 3.4rem; }
-  .pull-arrows { display: flex; flex-direction: column; justify-content: center; gap: .5rem; }
-  .pull-arrows i { width: 1.1rem; height: 1.1rem; border-right: .28rem solid var(--gold); border-bottom: .28rem solid var(--gold); transform: rotate(45deg); animation: nudge 1.2s ease-in-out infinite; }
-  .pull-arrows i:nth-child(2) { animation-delay: .15s; }
-  .pull-arrows i:nth-child(3) { animation-delay: .3s; }
-  @keyframes nudge { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+  .swing { position: relative; width: clamp(11rem, 52vmin, 16rem); aspect-ratio: 1; margin: .5rem 0; }
+  .swing-wheel { position: absolute; inset: 18%; animation: swingwheel 1.8s cubic-bezier(.5, 0, .3, 1) infinite; }
+  .swing-wheel svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 0 1.2rem rgba(242, 192, 74, .35)); }
+  .swing-arm { position: absolute; inset: 0; animation: swingarm 1.8s cubic-bezier(.5, 0, .3, 1) infinite; }
+  .swing-arm svg { position: absolute; right: 0; top: 50%; width: 16%; height: auto; margin-top: -13%; color: var(--gold); }
+  @keyframes swingarm { 0%, 15% { transform: rotate(-70deg); opacity: 0; } 25% { opacity: 1; } 70%, 100% { transform: rotate(55deg); opacity: 0; } 60% { opacity: 1; } }
+  @keyframes swingwheel { 0%, 25% { transform: rotate(0deg); } 100% { transform: rotate(240deg); } }
   .door.eyed, .offer .btn.eyed { box-shadow: 0 0 0 3px var(--gold), 0 0 2.6rem rgba(242, 192, 74, .55); }
   .door.eyed { transform: scale(1.02); transition: transform .15s ease; }
   .via-note { text-align: center; color: var(--gold); }
@@ -673,8 +668,9 @@
     .roll.is-ready .die-hop, .roll.is-shaking .die .die-hop, .die.landed .die-ring, .die-rays, .tray::before, .tray.bump, .roll.is-jackpot .total-amt,
     .offer:not(.done) .offer-head svg, .bagbig svg, .pill.busy::before, .icon-btn.speaking, .show-rays, .show-kicker, .show-art, .show-cap, .banner-sub,
     .on-air, .spark, .die.tumble .cube, .forever .wheel-rot, .wheel.ready .wheel-hub, .show.dark::before, .show-stage.flicker .show-big, .credits-roll { animation: none; }
-    .roll.phone-shaking .in-phone svg, .pull-arrows i { animation: none; }
-    .pull-knob, .ctl-pick { transition: none; }
+    .roll.phone-shaking .in-phone svg, .swing-wheel { animation: none; }
+    .swing-arm { animation: none; transform: rotate(-20deg); }
+    .ctl-pick { transition: none; }
     .ctl-dice { transition: none; }
     .credits { overflow: auto; -webkit-mask: none; mask: none; }
     .credits-roll { position: static; }
@@ -1129,7 +1125,9 @@
 
   // What the announcer says. Short, warm, a little cheeky.
   const lines = {
-    pickOpen: () => oneOf(['Who’s next? Spin the wheel.', 'Let’s see who’s up next. Spin it!', 'Next player. The wheel decides.']),
+    pickOpen: first => first
+      ? oneOf(['Who goes first? Spin the wheel.', 'Let’s find our first player. Spin it!'])
+      : oneOf(['Who’s next? Spin the wheel.', 'Let’s see who’s up next. Spin it!', 'Next player. The wheel decides.']),
     turn: n => oneOf([`${n}! Pera... o kapalaran?`, `${n}, come on down! Pera... o kapalaran?`, `Next up, ${n}. One question. Pera... o kapalaran?`]),
     pera: n => oneOf([`Pera! Smart. Boring... but smart. RJ, three hundred pesos for ${n}, please.`, `${n} takes the money and runs! Three hundred pesos. RJ, pay up.`, `Pera it is. Three hundred pesos, safe and sound. Wise choice, ${n}.`]),
     fate: n => oneOf([`Kapalaran! Brave. Let's see what fate thinks of ${n}.`, `Kapalaran! Give those dice a good shake, ${n}.`, `Kapalaran it is! No take-backs now.`]),
@@ -1306,7 +1304,7 @@
     return `<div class="wheel-wrap${done ? ' still' : ''}">
       <p class="wheel-dice">${chipHTML(p.dice[0], 0, isStar(p, 0))}<span>+</span>${chipHTML(p.dice[1], 1, isStar(p, 1))}<span>+</span>${done ? wheelChip(p) : chipHTML(SPIN, 2)}</p>
       <div class="wheel ${done ? 'done' : 'ready'}">${wheelSVG(p.wheel.slots, done ? restAngle(p.wheel) : 0, done ? p.wheel.won : null)}</div>
-      ${done ? '' : phoneOn() ? '<p class="hint">Pull down on the phone to spin.</p><button class="btn ghost spin-btn" type="button">Or spin from this screen</button>' : '<button class="btn primary big spin-btn" type="button">Spin the wheel</button>'}
+      ${done ? '' : phoneOn() ? '<p class="hint">Swing the phone down to spin.</p><button class="btn ghost spin-btn" type="button">Or spin from this screen</button>' : '<button class="btn primary big spin-btn" type="button">Spin the wheel</button>'}
     </div>`;
   }
 
@@ -1351,7 +1349,7 @@
         ? `<p class="note">Nobody’s on the list yet. Add everyone who’s playing, then spin to see who goes first.</p>${lost ? `<div><button class="btn ghost" data-action="restore-names"${dis}>Bring back the last list (${lost} ${lost === 1 ? 'name' : 'names'})</button></div>` : ''}`
         : (!waiting.length ? '<p class="note">Everyone on the list has played. Add a name if someone’s missing.</p>' : '');
       const spinNext = waiting.length
-        ? `<div class="spin-next"><button class="btn primary big" data-action="pick"${dis}>${waiting.length > 1 ? 'Spin for the next player' : `Last up: ${esc(waiting[0].name)}`}</button>
+        ? `<div class="spin-next"><button class="btn primary big" data-action="pick"${dis}>${waiting.length > 1 ? (done.length ? 'Spin for the next player' : 'Spin for the first player') : `Last up: ${esc(waiting[0].name)}`}</button>
             ${waiting.length > 1 ? '<p class="fine">The wheel decides the order, so everyone has the same chance at the roulette prizes.</p>' : ''}</div>` : '';
       next = `${spinNext}${chips ? `<div class="chips">${chips}</div>` : ''}${hint}
         <form id="add-form" class="add" novalidate>
@@ -1465,7 +1463,7 @@
       ${opener}${staleBox}
       <div class="lobby">
         <div class="lobby-col">
-          <section class="sec"><h2>Who’s next?</h2>${next}</section>
+          <section class="sec"><h2>${done.length || f ? 'Who’s next?' : 'Who goes first?'}</h2>${next}</section>
           <section class="card"><div class="card-head">${twist ? ICON_BAG : PAROL}<h2>${twist ? 'One more thing' : 'The end of the show'}</h2></div>${fin}</section>
         </div>
         <section class="sec"><h2>The record</h2>${record}</section>
@@ -1475,11 +1473,12 @@
 
   function viewPick() {
     const waiting = state.players.filter(p => p.status === 'waiting');
+    const first = waiting.length === state.players.length;       // nobody has played yet
     return `<section class="pick">
       <button class="back" data-action="home">‹ The record</button>
-      <h1>Who’s next?</h1>
+      <h1>${first ? 'Who goes first?' : 'Who’s next?'}</h1>
       <div class="wheel ready" data-action="pick-spin">${nameWheelSVG(waiting.map(p => p.name), 0)}</div>
-      ${phoneOn() ? '<p class="hint">Pull down on the phone to spin.</p><button class="btn ghost" data-action="pick-spin">Or spin from this screen</button>' : '<button class="btn primary big" data-action="pick-spin">Spin the wheel</button>'}
+      ${phoneOn() ? '<p class="hint">Swing the phone down to spin.</p><button class="btn ghost" data-action="pick-spin">Or spin from this screen</button>' : '<button class="btn primary big" data-action="pick-spin">Spin the wheel</button>'}
       <p class="fine">${waiting.length} still to play. Every name has the same chance.</p>
     </section>`;
   }
@@ -1660,7 +1659,7 @@
 
     const input = document.getElementById('new-name');
     if (input) { input.value = typed; if (hadFocus) input.focus(); }
-    wheelWaiting = route.name === 'pick' ? power => actions['pick-spin'](power) : null;     // a pull on the dice phone spins it too
+    wheelWaiting = route.name === 'pick' ? power => actions['pick-spin'](power) : null;     // a swing of the dice phone spins it too
     tellPhone();
   }
   function go(r, keepFresh) {
@@ -2049,7 +2048,7 @@
         wrap.querySelectorAll('.hint').forEach(h => h.remove());
         wheel.classList.remove('ready');
         const n = p.wheel.slots.length;
-        const end = 360 * (5 + Math.round((typeof power === 'number' ? power : 0.5) * 3)) + restAngle(p.wheel);   // a harder pull, more turns
+        const end = 360 * (5 + Math.round((typeof power === 'number' ? power : 0.5) * 3)) + restAngle(p.wheel);   // a harder swing, more turns
         runWheel(rotEl, pin, n, end, settle);
       };
       wheel.addEventListener('click', spin);
@@ -2286,7 +2285,8 @@
     else if (route.name === 'choice' && p) { stage = 'choice'; who = p; }
     else if (route.name === 'roll' && p) { stage = wheelWaiting ? 'wheel' : busy ? 'rolling' : p.status === 'rolled' ? 'result' : 'ready'; who = p; }
     const amount = who && (stage === 'result' || stage === 'offer') ? who.total : null;
-    const msg = { t: 'stage', stage, name: who ? who.name : '', total: amount, bag: stage === 'result' && wonBag(who), left: waiting.length, last: waiting.length === 1 ? waiting[0].name : '' };
+    const msg = { t: 'stage', stage, name: who ? who.name : '', total: amount, bag: stage === 'result' && wonBag(who),
+      left: waiting.length, last: waiting.length === 1 ? waiting[0].name : '', first: !f && waiting.length === state.players.length };
     const key = JSON.stringify(msg);
     if (!force && key === lastTold) return;
     lastTold = key;
@@ -2305,7 +2305,7 @@
       shakeCalm = setTimeout(() => stage.classList.remove('phone-shaking'), 500);
     } else if (m.t === 'throw') {
       const power = Math.max(0, Math.min(1, +m.p || 0.5));
-      if (wheelWaiting) { wheelWaiting(power); return; }       // a pull on the phone spins the wheel that is waiting
+      if (wheelWaiting) { wheelWaiting(power); return; }       // a swing of the phone spins the wheel that is waiting
       if (!stage || busy) return;
       throwPower = power;
       actions.roll();
@@ -2335,7 +2335,7 @@
   }
 
   /* ---- on the phone ---- */
-  // The phone is the player's controller: it picks Pera or Kapalaran, pulls the wheels, and
+  // The phone is the player's controller: it picks Pera or Kapalaran, swings the wheels round, and
   // shakes and throws the dice. Everything it does is a request; the big screen runs the game.
   function startController() {
     document.title = 'Rivera Royale dice';
@@ -2343,14 +2343,14 @@
     const el = document.createElement('main');
     el.className = 'ctl';
     $app.appendChild(el);
-    let stage = { stage: 'lobby', name: '', total: null, bag: false, left: 0, last: '' };
-    let active = false, thrown = false, sawMotion = false, giveUp = 0;
-    let armed = '', armedAt = 0, armTimer = 0, note = null, noteTimer = 0, pull = null;
+    let stage = { stage: 'lobby', name: '', total: null, bag: false, left: 0, last: '', first: false };
+    let active = false, thrown = false, sawMotion = false, giveUp = 0, stageAt = 0;
+    let armed = '', armedAt = 0, armTimer = 0, note = null, noteTimer = 0;
     let energy = 0, quick = 0, peak = 0, peakAtCalm = 0, work = 0, shakeFrom = 0, calmFrom = 0, lastAt = 0, lastSent = 0, grav = null;
 
     // A big two-tap choice: the first tap asks "final answer?", the second locks it in.
     const choice = (what, label, sub, cls) => `<button class="ctl-pick ${cls}${armed === what ? ' armed' : ''}" type="button" data-ctl="${what}"><b>${armed === what ? 'Final answer?' : esc(label)}</b><span>${armed === what ? 'Tap again to lock it in' : esc(sub)}</span></button>`;
-    const pullHTML = `<div class="pull"><div class="pull-track"><div class="pull-fill"></div><div class="pull-knob">${ICON_WHEEL}</div></div><div class="pull-arrows" aria-hidden="true"><i></i><i></i><i></i></div></div>`;
+    const swingHTML = `<div class="swing" aria-hidden="true"><div class="swing-wheel">${ICON_WHEEL}</div><div class="swing-arm">${ICON_PHONE}</div></div>`;
 
     function paint() {
       const st = link.status(), s = stage;
@@ -2359,7 +2359,7 @@
       else if (st !== 'on') {
         big = st === 'failed' ? 'Can’t reach the big screen' : 'Connecting to the big screen…';
         sub = st === 'failed' ? 'Check that both devices are online. Still trying.' : `Code ${PAIR}`;
-      } else if (!active) { big = 'Ready when you are'; sub = 'This phone picks, pulls, shakes and throws. The big screen shows it.'; btn = ['activate', 'Start']; }
+      } else if (!active) { big = 'Ready when you are'; sub = 'This phone picks, swings, shakes and throws. The big screen shows it.'; btn = ['activate', 'Start']; }
       else if (note) { kicker = note.kicker || kicker; big = note.big; sub = note.sub; }
       else if (s.stage === 'choice') {
         name = s.name; kicker = 'Pera o Kapalaran?';
@@ -2372,9 +2372,10 @@
         btn = thrown ? null : ['throw', 'Throw'];
       } else if (s.stage === 'wheel' || s.stage === 'pick') {
         name = s.stage === 'wheel' ? s.name : '';
-        kicker = s.stage === 'wheel' ? 'The roulette' : 'Who’s next?';
-        big = thrown ? 'Look at the big screen!' : 'Pull down to spin!';
-        mid = thrown ? '' : pullHTML;
+        kicker = s.stage === 'wheel' ? 'The roulette' : s.first ? 'Who goes first?' : 'Who’s next?';
+        big = thrown ? 'Look at the big screen!' : 'Swing down to spin!';
+        mid = thrown ? '' : swingHTML;
+        sub = thrown ? '' : sawMotion ? 'Raise the phone, then swing it down like turning a big wheel.' : 'If swinging does nothing, use the button.';
         quiet = thrown ? null : ['throw', 'Or tap to spin'];
       } else if (s.stage === 'rolling') { name = s.name; big = 'Look at the big screen!'; }
       else if (s.stage === 'result') { name = s.name; kicker = 'takes home'; big = peso(s.total || 0) + (s.bag ? ' + the Mystery Bag' : ''); btn = ['home', 'Pass it on']; }
@@ -2383,7 +2384,11 @@
         mid = `<div class="ctl-picks">${choice('cash', `Keep ${peso(s.total || 0)}`, 'Walk away with the cash', 'cash')}${choice('bag', 'Mystery Bag', `Hand back the ${peso(s.total || 0)}`, 'fate')}</div>`;
       } else if (s.stage === 'rolloff') { kicker = 'A tie'; big = 'Roll off!'; btn = ['roll-off', 'Roll the tie-breaker']; }
       else if (s.stage === 'show') { big = 'Watch the big screen'; }
-      else if (s.left > 0) { kicker = 'Who’s next?'; big = s.left === 1 ? `Last up: ${s.last}` : 'Next player'; btn = ['pick', s.left === 1 ? `Call ${s.last}` : 'Spin for the next player']; }
+      else if (s.left > 0) {
+        kicker = s.first ? 'Who goes first?' : 'Who’s next?';
+        big = s.left === 1 ? `Last up: ${s.last}` : s.first ? 'First player' : 'Next player';
+        btn = ['pick', s.left === 1 ? `Call ${s.last}` : s.first ? 'Spin for the first player' : 'Spin for the next player'];
+      }
       else { big = 'Wait for the host'; sub = 'Nothing to do here just now.'; }
       el.className = `ctl at-${st === 'on' ? s.stage : 'off'}${thrown ? ' is-thrown' : ''}`;
       el.innerHTML = `<div class="ctl-top">${PAROL}<span>Rivera <em class="foil">Royale</em></span><span class="pill ${st === 'on' ? 'ok' : st === 'failed' ? 'warn' : 'busy'}">${st === 'on' ? 'Connected' : st === 'failed' ? 'Offline' : 'Connecting'}</span></div>
@@ -2444,25 +2449,28 @@
       energy = Math.max(mag, energy * Math.exp(-dt / 160));     // smooth, for the meter and the big screen
       quick = Math.max(mag, quick * Math.exp(-dt / 60));        // fast, to catch the instant the hand stops
       peak = Math.max(mag, peak * Math.exp(-dt / 500));         // how hard the last swing was
-      // Only the dice are thrown by moving the phone; the wheels are pulled on the screen.
-      if (stage.stage !== 'ready' || thrown || link.status() !== 'on') { shakeFrom = 0; work = 0; calmFrom = 0; return; }
+      // Dice: shake, then stop. Wheels: one big downward swing of the arm, as if turning the wheel by hand.
+      const wheel = stage.stage === 'wheel' || stage.stage === 'pick';
+      const settling = wheel && now - stageAt < 700;            // ignore the hand still moving from the moment before
+      if (!(stage.stage === 'ready' || wheel) || settling || thrown || link.status() !== 'on') { shakeFrom = 0; work = 0; calmFrom = 0; return; }
       if (quick > SHAKE_ON && !shakeFrom) { shakeFrom = now; work = 0; }
       if (shakeFrom) {
         work += mag * dt / 1000;
         if (quick >= SHAKE_OFF) calmFrom = 0;
         else {
           if (!calmFrom) { calmFrom = now; peakAtCalm = peak; }
-          // The throw is the moment the shaking stops: a real swing ends with the hand held still.
-          if (now - calmFrom > 130) {
-            const ok = calmFrom - shakeFrom > 450 && work > 4;
+          // The moment the hand stops is the throw (or the end of the swing).
+          if (now - calmFrom > (wheel ? 90 : 130)) {
+            const long = calmFrom - shakeFrom;
+            const ok = wheel ? long > 90 && peakAtCalm > 10 && work > 1 : long > 450 && work > 4;
             shakeFrom = 0; calmFrom = 0; work = 0;
             if (ok) doThrow(Math.max(0.25, Math.min(1, peakAtCalm / 32)));
-            else link.send({ t: 'shake', e: 0 });
+            else if (!wheel) link.send({ t: 'shake', e: 0 });
             return;
           }
         }
       }
-      if (shakeFrom && now - lastSent > 70) {
+      if (!wheel && shakeFrom && now - lastSent > 70) {
         lastSent = now;
         link.send({ t: 'shake', e: +Math.min(1, energy / 26).toFixed(2) });
         if (energy > 8) knock(0, 0.12 + Math.min(0.3, energy / 80));
@@ -2499,34 +2507,6 @@
       } else { disarm(true); link.send({ t: 'do', what }); buzz(30); }
     });
 
-    // Pulling the handle down spins whichever wheel is on the big screen.
-    el.addEventListener('pointerdown', e => {
-      const zone = e.target.closest('.pull');
-      if (!zone || thrown) return;
-      const knob = zone.querySelector('.pull-knob'), track = zone.querySelector('.pull-track');
-      pull = { id: e.pointerId, zone, knob, y0: e.clientY, dy: 0, max: Math.max(40, track.clientHeight - knob.offsetHeight), lastY: e.clientY, lastT: performance.now(), v: 0 };
-      try { zone.setPointerCapture(e.pointerId); } catch (err) { /* fine without capture */ }
-      zone.classList.add('pulling');
-    });
-    el.addEventListener('pointermove', e => {
-      if (!pull || e.pointerId !== pull.id) return;
-      const now = performance.now(), dt = now - pull.lastT;
-      if (dt > 8) { pull.v = (e.clientY - pull.lastY) / dt; pull.lastY = e.clientY; pull.lastT = now; }
-      pull.dy = Math.max(0, Math.min(pull.max, e.clientY - pull.y0));
-      pull.knob.style.transform = `translateY(${pull.dy.toFixed(1)}px)`;
-      pull.zone.style.setProperty('--pull', (pull.dy / pull.max).toFixed(3));
-    });
-    const endPull = (e, cancelled) => {
-      if (!pull || (e && e.pointerId !== pull.id)) return;
-      const far = pull.dy / pull.max, fast = Math.max(0, pull.v);
-      pull.zone.classList.remove('pulling');
-      pull.knob.style.transform = '';
-      pull.zone.style.setProperty('--pull', '0');
-      pull = null;
-      if (!cancelled && (far > 0.45 || (far > 0.2 && fast > 0.7))) doThrow(Math.max(0.3, Math.min(1, far * 0.6 + fast * 0.35)));
-    };
-    el.addEventListener('pointerup', e => endPull(e, false));
-    el.addEventListener('pointercancel', e => endPull(e, true));
     window.addEventListener('devicemotion', onMotion);
 
     // The dice on the phone rattle with the hand.
@@ -2548,12 +2528,12 @@
       stage = m;
       if (changed) {
         disarm(false);
-        pull = null;
+        stageAt = performance.now();
         clearTimeout(giveUp);
         thrown = m.stage === 'rolling';
         if (m.stage === 'result') buzz(m.bag || m.total >= 500 ? [60, 40, 60, 40, 220] : 40);
       }
-      if (!pull) paint();
+      paint();
     });
     link.onStatus(paint);
     paint();
@@ -2594,7 +2574,7 @@
       if (waiting.length === 1) { actions.turn({ dataset: { id: waiting[0].id } }); return; }
       go({ name: 'pick' });
       sfx.slam();
-      voice.say(lines.pickOpen());
+      voice.say(lines.pickOpen(waiting.length === state.players.length));
     },
     'pick-spin'(power) {
       const wrap = $app.querySelector('.pick');

@@ -31,10 +31,10 @@ reveal it.
 ## Running the show
 
 1. Open the game, add everyone's name, and tap **Start the show** for the intro.
-2. Tap **Spin for the next player**. A wheel of the waiting names decides who goes next, so the
-   order is fair (roulette prizes can only be won once, which favours going early). The person
-   it lands on is called up and taps Pera or Kapalaran. Host tools can still call someone up by
-   hand.
+2. Tap **Spin for the first player** (after the first turn it reads **Spin for the next
+   player**). A wheel of the waiting names decides who is up, so the order is fair (roulette
+   prizes can only be won once, which favours going early). The person it lands on is called up
+   and taps Pera or Kapalaran. Host tools can still call someone up by hand.
 3. On the dice stage, tap anywhere to throw, or hold the screen to shake first.
 4. When everyone is done, tap **End the show** and let the ending play.
 
@@ -59,7 +59,9 @@ them; the marks never show in the captions.
 A second phone can be the player's controller, so the big screen only has to show the action.
 Whoever is playing holds the phone and:
 
-- pulls a handle down to spin the name wheel (who goes next) and the roulette;
+- spins the name wheel (who goes first, then who's next) and the roulette by raising the phone
+  and swinging it down in one big motion, like turning a big wheel by hand (a harder swing spins
+  it longer; **Or tap to spin** does the same without moving);
 - taps **Pera** or **Kapalaran** (Pera asks "Final answer?" and needs a second tap, while the big
   screen lights up the door being considered);
 - shakes the phone, swings it toward the big screen and stops, and the three dice fly in;
@@ -81,9 +83,10 @@ to read a phone's motion sensors or connect two devices directly.
 
 How it works: the big screen stays in charge of the game and draws every result; the phone only
 sends requests ("shaking", "thrown", "Pera", and so on). The throw is the moment the shaking
-stops. The two devices talk
-directly (WebRTC), introduced by the free public PeerJS service, so both need internet. If the link
-drops, the phone keeps retrying and the dice can always be rolled from the big screen.
+stops, and a wheel spins the moment a swing ends; small movements of the hand are ignored. The two
+devices talk directly (WebRTC), introduced by the free public PeerJS service, so both need
+internet. If the link drops, the phone keeps retrying and the dice can always be rolled from the
+big screen.
 
 On this address the record is saved in the big screen's browser, and the announcer uses the
 device's own voice (a Filipino one if installed).
@@ -92,8 +95,10 @@ device's own voice (a Filipino one if installed).
 
 - `pamasko-dice.html` is the game. It is the source for the published Claude artifact, where the
   record is saved to the artifact's shared database.
-- `index.html` is the same game wrapped as a standalone page (open it directly or host it
-  anywhere). There the record is saved in that browser only, so play the whole game on one device.
+- `index.html` is the same game wrapped as a standalone page, to host anywhere. There the record
+  is saved in that browser only, so play the whole game on one device. Use a web address rather
+  than opening the file straight from disk: a browser may not keep the saved record across a
+  refresh for a local file.
 - `build.mjs` regenerates `index.html` after editing `pamasko-dice.html`: `node build.mjs`.
 
 The amounts, the wheel and the intro script are near the top of the script in `pamasko-dice.html`
