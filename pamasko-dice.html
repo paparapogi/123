@@ -577,6 +577,36 @@
   .banner-big { font: 400 clamp(3rem, 17vmin, 11rem)/.98 var(--display); letter-spacing: .02em; text-transform: uppercase; text-wrap: balance; }
   .banner-sub { margin-top: .6rem; font-weight: 800; font-size: clamp(1rem, 3vmin, 1.6rem); letter-spacing: .12em; text-transform: uppercase; color: var(--ivory); animation: rise .4s .35s ease both; }
 
+  /* ---------- The dice phone ---------- */
+  .roll.via-phone.is-ready .die { opacity: 0; }
+  .in-phone { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; text-align: center; font-weight: 800; color: var(--muted); pointer-events: none; }
+  .in-phone svg { width: clamp(3rem, 11vmin, 5.5rem); height: auto; color: var(--gold); transform-origin: 50% 80%; filter: drop-shadow(0 0 .8rem rgba(242, 192, 74, .45)); }
+  .roll.phone-shaking .in-phone svg { animation: phoneshake .14s linear infinite; }
+  .roll.phone-shaking .in-phone b { color: var(--gold); }
+  .roll.phone-shaking .tray::before { animation-duration: .45s; }
+  @keyframes phoneshake { 0%, 100% { transform: rotate(-14deg) translateX(-6%); } 50% { transform: rotate(14deg) translateX(6%); } }
+  @keyframes flyin { from { opacity: 0; transform: translate(var(--fx, 0), 150%) scale(2.6) rotate(40deg); } 18% { opacity: 1; } to { opacity: 1; transform: none; } }
+  .phone-box { display: flex; flex-direction: column; gap: .7rem; }
+  .qr-box { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+  .qr { width: 11rem; max-width: 100%; height: auto; border-radius: .6rem; flex: none; }
+  .qr-box div { min-width: 0; flex: 1 1 12rem; }
+  .qr-url { overflow-wrap: anywhere; font-weight: 700; }
+  .ctl { min-height: calc(100vh - 5rem); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 1rem; text-align: center; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  .ctl-top { display: flex; align-items: center; gap: .55rem; font: 400 1.25rem/1 var(--display); letter-spacing: .06em; text-transform: uppercase; text-align: left; }
+  .ctl-top svg { width: 1.6rem; height: 1.9rem; flex: none; }
+  .ctl-top em { font: italic 900 1.12em/1 var(--script); letter-spacing: 0; text-transform: none; padding-right: .12em; }
+  .ctl-top .pill { margin-left: auto; font-family: var(--body); letter-spacing: 0; text-transform: none; }
+  .ctl-body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8rem; min-height: 0; }
+  .ctl-kicker { font: 800 .85rem/1.2 var(--body); letter-spacing: .28em; text-transform: uppercase; color: var(--gold); }
+  .ctl-name { font-size: clamp(2.4rem, 13vmin, 5rem); line-height: 1; overflow-wrap: anywhere; }
+  .ctl-big { font: 400 clamp(2rem, 10vmin, 4rem)/1.05 var(--display); letter-spacing: .02em; text-transform: uppercase; text-wrap: balance; }
+  .ctl-dice { --s: clamp(4rem, 23vw, 7rem); display: flex; gap: clamp(.8rem, 5vw, 2rem); padding: 1.6rem 0 1rem; transition: transform .38s cubic-bezier(.5, 0, .9, .4), opacity .38s ease; }
+  .ctl-dice .die { transition: none; }
+  .ctl.is-thrown .ctl-dice { transform: translateY(-120vh) scale(.5); opacity: 0; }
+  .ctl-meter { width: min(100%, 16rem); height: .6rem; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .ctl-meter i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold-deep), var(--gold-light)); }
+  .ctl.is-thrown .ctl-meter { visibility: hidden; }
+
   .confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
   .flash {
     position: fixed; inset: 0; z-index: 40; pointer-events: none;
@@ -597,7 +627,7 @@
     .hero { margin-top: -2.4rem; }
     .hero .logo { --logo: clamp(3.4rem, 13vmin, 6rem); }
     .roll { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); grid-template-areas: "back back" "name stage" "score stage" "after stage"; column-gap: 2.5rem; row-gap: .6rem; align-content: center; min-height: calc(100vh - 8rem); }
-    .roll > .back { grid-area: back; }
+    .roll > .back { grid-area: back; justify-self: start; }
     .roll > h1 { grid-area: name; align-self: end; }
     .roll > .score { grid-area: score; margin-top: 0; }
     .roll > .tray, .roll > .wheel-wrap { grid-area: stage; align-self: center; }
@@ -612,6 +642,8 @@
     .roll.is-ready .die-hop, .roll.is-shaking .die .die-hop, .die.landed .die-ring, .die-rays, .tray::before, .tray.bump, .roll.is-jackpot .total-amt,
     .offer:not(.done) .offer-head svg, .bagbig svg, .pill.busy::before, .icon-btn.speaking, .show-rays, .show-kicker, .show-art, .show-cap, .banner-sub,
     .on-air, .spark, .die.tumble .cube, .forever .wheel-rot, .wheel.ready .wheel-hub, .show.dark::before, .show-stage.flicker .show-big, .credits-roll { animation: none; }
+    .roll.phone-shaking .in-phone svg { animation: none; }
+    .ctl-dice { transition: none; }
     .credits { overflow: auto; -webkit-mask: none; mask: none; }
     .credits-roll { position: static; }
     .die.mini .die-tilt { animation: none; transform: rotateX(-22deg) rotateY(-30deg); }
@@ -650,6 +682,11 @@
   const LS_VOICE = 'pamasko-dice:voice';
   const LS_SOURCE = 'pamasko-dice:voice-source';
   const LS_INTRO = 'pamasko-dice:intro-seen';
+  const LS_PAIR = 'pamasko-dice:pair-code';
+  const LS_LINK = 'pamasko-dice:phone-link';
+  // Loaded only when a dice phone is being connected.
+  const PEER_SRC = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
+  const QR_SRC = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
 
   /* ================= Helpers ================= */
   const $app = document.getElementById('app');
@@ -847,6 +884,7 @@
   const ICON_WHEEL = '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="var(--ruby)"/><path fill="var(--gold)" d="M20 20V2a18 18 0 0 1 15.6 9zM20 20l15.6 9A18 18 0 0 1 20 38zM20 20L4.4 29a18 18 0 0 1 0-18z"/><circle cx="20" cy="20" r="18" fill="none" stroke="var(--ivory)" stroke-width="2.4"/><circle cx="20" cy="20" r="3.6" fill="var(--ivory)"/></svg>';
   const ICON_SOUND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.2 6a8.5 8.5 0 0 1 0 12"/></svg>';
   const ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9.5l5 5M22 9.5l-5 5"/></svg>';
+  const ICON_PHONE = '<svg viewBox="0 0 40 64" aria-hidden="true"><rect x="4" y="2" width="32" height="60" rx="7" fill="none" stroke="currentColor" stroke-width="3.5"/><circle cx="13" cy="24" r="3.2" fill="currentColor"/><circle cx="27" cy="24" r="3.2" fill="currentColor"/><circle cx="20" cy="33" r="3.2" fill="currentColor"/><circle cx="13" cy="42" r="3.2" fill="currentColor"/><circle cx="27" cy="42" r="3.2" fill="currentColor"/></svg>';
   const ICON_FULL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
 
   const logoHTML = () => `<div class="logo" role="img" aria-label="Rivera Royale"><span class="logo-top">Rivera</span><span class="logo-bottom foil">Royale</span><span class="logo-tag">Pera o Kapalaran?</span></div>`;
@@ -1163,7 +1201,7 @@
   /* ================= Views ================= */
   let route = { name: 'home' };
   let busy = false;              // an animation owns the screen; hold re-renders until it ends
-  const ui = { hostOpen: false, sidesOpen: false, addError: '', animRound: -1, enter: true, fresh: null };
+  const ui = { hostOpen: false, sidesOpen: false, addError: '', animRound: -1, enter: true, fresh: null, qr: '' };
   const canFull = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
   let introSeen = store.get(LS_INTRO) === '1';
 
@@ -1228,6 +1266,7 @@
       ${home ? '' : `<button class="brand" data-action="home" aria-label="Rivera Royale, back to the lobby">${PAROL}<span>Rivera <em class="foil">Royale</em></span></button>`}
       <div class="top-tools">
         <span id="sync-pill" class="pill ${tone}"${sync.mode === 'local' ? ' hidden' : ''}>${label}</span>
+        ${phonePill()}
         ${canFull ? `<button class="icon-btn" data-action="full" aria-label="Full screen">${ICON_FULL}</button>` : ''}
         <button class="icon-btn${voice.talking() ? ' speaking' : ''}" id="sound-btn" data-action="sound" aria-pressed="${soundOn}" aria-label="${soundOn ? 'Sound is on. Tap to mute and stop the voice.' : 'Sound is off. Tap to turn it on.'}">${soundOn ? ICON_SOUND : ICON_MUTE}</button>
       </div>
@@ -1264,7 +1303,7 @@
         ${waiting.length > 1 ? `<div class="roster-acts"><button class="btn quiet" data-action="pick"${dis}>Pick someone for me</button></div>` : ''}
         <form id="add-form" class="add" novalidate>
           <label class="sr" for="new-name">Name to add</label>
-          <input id="new-name" name="name" type="text" maxlength="24" placeholder="Add a name" autocomplete="off" autocapitalize="words" enterkeyhint="done"${dis}>
+          <input id="new-name" name="name" type="text" maxlength="600" placeholder="Add a name, or several with commas" autocomplete="off" autocapitalize="words" enterkeyhint="done"${dis}>
           <button class="btn ghost" type="submit"${dis}>Add</button>
         </form>
         ${ui.addError ? `<p class="error" role="alert">${esc(ui.addError)}</p>` : ''}`;
@@ -1320,6 +1359,18 @@
       ? `<div class="voice-pick">${srcs.map(k => `<button class="btn quiet${k === voice.kind() ? ' on' : ''}" data-action="voice-source" data-source="${k}">${srcLabel(k)}</button>`).join('')}</div>` : '';
     const voices = voice.kind() === 'claude' && !voice.blocked()
       ? `<div class="voice-pick">${voice.NAMES.map(v => `<button class="btn quiet${v === voice.name() ? ' on' : ''}" data-action="voice" data-voice="${v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join('')}</div>` : '';
+    let phoneBox = '';
+    if (hasHost) {
+      phoneBox = '<p class="fine">Dice phone: to throw the dice by shaking a second phone, open the game at its own web address. It can’t run inside Claude.</p>';
+    } else if (canLink) {
+      const st = link.status();
+      phoneBox = st === 'off'
+        ? `<div class="phone-box"><p><b>Dice phone.</b> Use a second phone as the dice: shake it, make a throwing motion, and the dice land on this screen.</p>
+            <div><button class="btn quiet" data-action="phone-on">Connect a phone</button></div></div>`
+        : `<div class="phone-box"><p><b>Dice phone:</b> ${st === 'on' ? 'connected.' : st === 'failed' ? 'can’t reach the connection service. Check the internet. Still trying.' : 'waiting for the phone. Scan this with the phone’s camera.'}</p>
+            <div class="qr-box">${ui.qr}<div><p class="fine">Or open this address on the phone:</p><p class="qr-url">${esc(pairUrl())}</p></div></div>
+            <div><button class="btn quiet" data-action="phone-off">Disconnect the phone</button></div></div>`;
+    }
     const host = `<details class="host"${ui.hostOpen ? ' open' : ''}>
       <summary>Host tools</summary>
       <div class="host-body">
@@ -1329,6 +1380,7 @@
           <div><dt>Roulette jackpot bag</dt><dd>${jackpotBy ? esc(jackpotBy.name) : 'Still on the wheel'}</dd></div>
           ${twist ? `<div><dt>Lowest-roller bag</dt><dd>${swapped.length ? esc(list(swapped.map(p => p.name))) : 'Not given yet'}</dd></div>` : ''}
         </dl>
+        ${phoneBox}
         <div class="voice-box">
           ${sourcePick}
           <p class="fine">${esc(voice.describe())}</p>
@@ -1431,14 +1483,15 @@
         ${resultHTML(p)}
       </section>`;
     }
-    return `<section class="roll is-ready" data-action="roll">
+    const viaPhone = phoneOn();
+    return `<section class="roll is-ready${viaPhone ? ' via-phone' : ''}" data-action="roll">
       <button class="back" data-action="turn" data-id="${p.id}">‹ Changed my mind</button>
       <h1>${esc(p.name)}</h1>
       <div class="score"><span class="score-label">giving up</span><span class="total-amt stake">${peso(STAKE)}</span></div>
-      <div class="tray">${DICE.map((d, i) => dieHTML(i, null)).join('')}</div>
+      <div class="tray">${DICE.map((d, i) => dieHTML(i, null)).join('')}${viaPhone ? `<div class="in-phone">${ICON_PHONE}<b>The dice are in the phone</b></div>` : ''}</div>
       <div class="roll-cta">
-        <p class="hint">Tap anywhere to roll. Hold to shake first.</p>
-        <button class="btn primary" data-action="roll">Roll the dice</button>
+        <p class="hint">${viaPhone ? 'Shake the phone, then throw at the screen.' : 'Tap anywhere to roll. Hold to shake first.'}</p>
+        <button class="btn ${viaPhone ? 'ghost' : 'primary'}" data-action="roll">${viaPhone ? 'Or roll from this screen' : 'Roll the dice'}</button>
         <p class="fine">No take-backs once the dice are out.</p>
       </div>
     </section>`;
@@ -1541,6 +1594,7 @@
 
     const input = document.getElementById('new-name');
     if (input) { input.value = typed; if (hadFocus) input.focus(); }
+    tellPhone();
   }
   function go(r, keepFresh) {
     route = r;
@@ -1617,6 +1671,7 @@
       play(at + 1);
     });
     showing = { finish };
+    tellPhone();
     play(0);
   }
 
@@ -1768,10 +1823,18 @@
     const T = still ? [200, 500, 900] : [1300, 2100, 3300];
     let shown = 0;
 
-    root.classList.remove('is-ready', 'is-shaking');
+    const viaPhone = root.classList.contains('via-phone');
+    const boost = Math.round(throwPower * 2);     // a harder throw from the phone spins the dice more
+    throwPower = 0;
+    root.classList.remove('is-ready', 'is-shaking', 'phone-shaking');
     root.classList.add('is-rolling');
     root.removeAttribute('data-action');
-    root.querySelectorAll('.back, .roll-cta').forEach(el => el.remove());
+    root.querySelectorAll('.back, .roll-cta, .in-phone').forEach(el => el.remove());
+    if (viaPhone && !still) dice.forEach((el, i) => {
+      el.style.setProperty('--fx', `${(1 - i) * 110}%`);      // they come in together from below, as if from the hand
+      el.style.animation = `flyin 560ms ${i * 60}ms cubic-bezier(.2, .8, .3, 1) both`;
+    });
+    tellPhone();
     label.textContent = 'so far';
     amt.classList.remove('stake');
     amt.classList.add('foil');
@@ -1790,6 +1853,7 @@
       el.querySelector('.readout').textContent = sideLabel(side);
       tray.classList.remove('bump'); void tray.offsetWidth; tray.classList.add('bump');
       sfx.land(); buzz(25);
+      link.send({ t: 'buzz', p: 30 });
       if (star && i < 2) { sfx.star(); fx.at(el, { n: 26, power: 8, spread: 6.3, gravity: 0.22, life: 55, size: 7, colors: fx.golds() }); }
       if (i < 2) { countTo(amt, shown, shown + p.dice[i], 380); shown += p.dice[i]; }
     };
@@ -1818,7 +1882,7 @@
     dice.forEach((el, i) => {
       const cube = el.querySelector('.cube');
       const [bx, by] = FACE_ROT[p.faces[i]];
-      const rx = spinTo(+cube.dataset.rx, bx, 3 + i), ry = spinTo(+cube.dataset.ry, by, 2 + i);
+      const rx = spinTo(+cube.dataset.rx, bx, 3 + i + boost), ry = spinTo(+cube.dataset.ry, by, 2 + i + boost);
       // Die 3 pauses on an edge, tilted 45 degrees toward one of its four neighbours picked at
       // random (the extra 16/18 degrees cancel the camera angle so both sides show equally).
       let tipX = 0, tipY = 0;
@@ -1894,6 +1958,8 @@
       const spin = () => {
         if (spun) return;
         spun = true;
+        wheelWaiting = null;
+        tellPhone();
         if (btn) btn.remove();
         wheel.classList.remove('ready');
         const n = p.wheel.slots.length, a = 360 / n;
@@ -1915,6 +1981,8 @@
       };
       wheel.addEventListener('click', spin);
       if (btn) btn.addEventListener('click', spin);
+      wheelWaiting = spin;
+      tellPhone();
     }, reduceMotion() ? 300 : 1250);
   }
 
@@ -1976,6 +2044,333 @@
     if (card && card.scrollIntoView) card.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
 
+  /* ================= The dice phone =================
+     A second phone can be the dice: shake it, make a throwing motion, and the dice fly onto the
+     big screen. The big screen stays in charge of the game; the phone only says "shaking" and
+     "thrown". The two talk directly to each other (WebRTC, introduced by the public PeerJS
+     service), which a page inside Claude is not allowed to do, so this runs on the game's own
+     web address only. */
+  const QS = new URLSearchParams(window.location.search);
+  const PAIR = hasHost ? '' : (QS.get('pair') || '').replace(/\D/g, '').slice(0, 5);   // set on the phone: the big screen's code
+  const LINK_VIA = QS.get('link') || '';            // for testing: "local" (same browser) or "host:port" (own PeerServer)
+  const canLink = !hasHost && (LINK_VIA === 'local' || typeof window.RTCPeerConnection === 'function');
+  const loadScript = src => new Promise((ok, bad) => {
+    const el = document.createElement('script');
+    el.src = src; el.onload = () => ok(); el.onerror = () => bad(new Error('could not load ' + src));
+    document.head.appendChild(el);
+  });
+
+  const link = (() => {
+    let status = 'off', role = '', code = '', wanted = false, peer = null, conn = null, chan = null, timer = 0, watchdog = 0;
+    let onMsg = () => {}, onStatus = () => {};
+    const set = st => { if (st !== status) { status = st; onStatus(st); } };
+    const peerId = c => 'rivera-royale-' + c;
+    const peerOpts = () => {
+      if (!LINK_VIA || LINK_VIA === 'local') return {};
+      const [host, port] = LINK_VIA.split(':');
+      return { host, port: +port || 9000, path: '/', secure: false };
+    };
+
+    function lost(c) {
+      if (c && conn !== c) return;
+      conn = null;
+      if (!wanted) return;
+      set('waiting');
+      clearTimeout(timer);
+      if (role === 'phone') timer = setTimeout(dial, 1500);
+    }
+    function adopt(c) {
+      conn = c;
+      c.on('open', () => { clearTimeout(watchdog); set('on'); if (role === 'phone') c.send({ t: 'hello' }); });
+      c.on('data', m => { if (m && typeof m === 'object' && conn === c) onMsg(m); });
+      c.on('close', () => lost(c));
+      c.on('error', () => lost(c));
+    }
+    function dial() {
+      if (!wanted || !peer || peer.destroyed || (conn && conn.open)) return;
+      if (peer.disconnected) { try { peer.reconnect(); } catch (e) { /* try again below */ } }
+      let c;
+      try { c = peer.connect(peerId(code), { reliable: true }); } catch (e) { lost(null); return; }
+      if (!c) { lost(null); return; }
+      adopt(c);
+      clearTimeout(watchdog);
+      watchdog = setTimeout(() => { if (conn === c && !c.open) { try { c.close(); } catch (e) { /* gone */ } lost(c); } }, 9000);
+    }
+    function open() {
+      if (!wanted) return;
+      try { if (peer) peer.destroy(); } catch (e) { /* already gone */ }
+      conn = null;
+      peer = role === 'tablet' ? new window.Peer(peerId(code), peerOpts()) : new window.Peer(peerOpts());
+      peer.on('open', () => { set('waiting'); if (role === 'phone') dial(); });
+      peer.on('connection', c => {
+        if (role !== 'tablet') return;
+        if (conn && conn !== c) { const old = conn; conn = null; try { old.close(); } catch (e) { /* gone */ } }
+        adopt(c);
+      });
+      peer.on('disconnected', () => { if (wanted) { try { peer.reconnect(); } catch (e) { /* retried on error */ } } });
+      peer.on('error', e => {
+        const type = e && e.type;
+        clearTimeout(timer);
+        if (type === 'peer-unavailable') lost(null);                              // the big screen isn't listening yet
+        else if (type === 'unavailable-id') timer = setTimeout(open, 2500);       // our earlier self is still registered
+        else if (wanted && status !== 'on') { set('failed'); timer = setTimeout(open, 4000); }
+      });
+    }
+    // A same-browser link, used only to test the two halves against each other.
+    function openLocal() {
+      chan = new BroadcastChannel('rivera-royale-' + code);
+      const mine = chan;
+      chan.onmessage = e => {
+        const m = e.data;
+        if (!m || m.from === role) return;
+        if (m.t === 'hello' && role === 'tablet') { const fresh = status !== 'on'; set('on'); chan.postMessage({ from: role, t: 'welcome' }); if (!fresh) return; }
+        if (m.t === 'welcome') { if (role === 'phone') set('on'); return; }
+        onMsg(m);
+      };
+      set('waiting');
+      // The phone keeps saying hello, so a big screen that was refreshed finds it again.
+      if (role === 'phone') (function knockOn() { if (wanted && chan === mine) { chan.postMessage({ from: role, t: 'hello' }); setTimeout(knockOn, status === 'on' ? 1000 : 300); } })();
+    }
+
+    return {
+      status: () => status,
+      onMessage(fn) { onMsg = fn; },
+      onStatus(fn) { onStatus = fn; },
+      async start(asRole, withCode) {
+        this.stop();
+        role = asRole; code = withCode; wanted = true;
+        set('connecting');
+        if (LINK_VIA === 'local') { openLocal(); return; }
+        try { if (!window.Peer) await loadScript(PEER_SRC); } catch (e) { set('failed'); return; }
+        open();
+      },
+      stop() {
+        wanted = false;
+        clearTimeout(timer); clearTimeout(watchdog);
+        try { if (peer) peer.destroy(); } catch (e) { /* already gone */ }
+        try { if (chan) chan.close(); } catch (e) { /* already gone */ }
+        peer = null; conn = null; chan = null;
+        set('off');
+      },
+      send(msg) {
+        if (status !== 'on') return;
+        try { if (chan) chan.postMessage(Object.assign({ from: role }, msg)); else if (conn && conn.open) conn.send(msg); } catch (e) { /* dropped; the next one will do */ }
+      },
+    };
+  })();
+
+  /* ---- on the big screen ---- */
+  let wheelWaiting = null;       // the spin, while the wheel waits for someone to set it going
+  let throwPower = 0;            // how hard the last throw came in from the phone, 0..1
+  let shakeCalm = 0, lastTold = '';
+  const phoneOn = () => !PAIR && link.status() === 'on';
+  function pairCode() {
+    let c = store.get(LS_PAIR) || '';
+    if (!/^\d{5}$/.test(c)) { c = Array.from({ length: 5 }, () => randInt(10)).join(''); store.set(LS_PAIR, c); }
+    return c;
+  }
+  const pairUrl = () => `${window.location.origin}${window.location.pathname}?pair=${pairCode()}${LINK_VIA ? '&link=' + encodeURIComponent(LINK_VIA) : ''}`;
+  function qrSVG(text) {
+    const qr = window.qrcode(0, 'M');
+    qr.addData(text);
+    qr.make();
+    const n = qr.getModuleCount();
+    let d = '';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c} ${r}h1v1h-1z`;
+    return `<svg class="qr" viewBox="-2 -2 ${n + 4} ${n + 4}" role="img" aria-label="QR code that connects the dice phone"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+  }
+  function startPhoneLink() {
+    if (!canLink) return;
+    store.set(LS_LINK, 'on');
+    link.start('tablet', pairCode());
+    if (!ui.qr) loadScript(QR_SRC).then(() => { ui.qr = qrSVG(pairUrl()); if (!busy && route.name === 'home') render(); }).catch(() => { /* the address is shown as text too */ });
+  }
+  function stopPhoneLink() {
+    store.set(LS_LINK, 'off');
+    link.stop();
+  }
+  const phonePill = () => {
+    const st = link.status();
+    if (PAIR || !canLink || st === 'off') return '';
+    return `<span class="pill ${st === 'on' ? 'ok' : st === 'failed' ? 'warn' : 'busy'}">Dice phone</span>`;
+  };
+
+  /** Keep the phone's screen in step with the big screen. It is told what is happening, never what is coming. */
+  function tellPhone(force) {
+    if (!phoneOn()) return;
+    const p = route.id ? player(route.id) : null;
+    let stage = 'lobby';
+    if (showing || route.name === 'finale') stage = 'show';
+    else if (route.name === 'choice' && p) stage = 'choice';
+    else if (route.name === 'roll' && p) stage = wheelWaiting ? 'wheel' : busy ? 'rolling' : p.status === 'rolled' ? 'result' : 'ready';
+    const done = stage === 'result';
+    const msg = { t: 'stage', stage, name: p && stage !== 'lobby' && stage !== 'show' ? p.name : '', total: done ? p.total : null, bag: done && wonBag(p) };
+    const key = JSON.stringify(msg);
+    if (!force && key === lastTold) return;
+    lastTold = key;
+    link.send(msg);
+  }
+  function fromPhone(m) {
+    if (m.t === 'hello') { tellPhone(true); return; }
+    const stage = $app.querySelector('.roll.is-ready');
+    if (m.t === 'shake') {
+      if (!stage || busy) return;
+      const e = Math.max(0, Math.min(1, +m.e || 0));
+      stage.classList.toggle('phone-shaking', e > 0.06);
+      if (e > 0.1) knock(0, 0.1 + e * 0.3);
+      clearTimeout(shakeCalm);
+      shakeCalm = setTimeout(() => stage.classList.remove('phone-shaking'), 500);
+    } else if (m.t === 'throw') {
+      if (wheelWaiting) { wheelWaiting(); return; }
+      if (!stage || busy) return;
+      throwPower = Math.max(0, Math.min(1, +m.p || 0));
+      actions.roll();
+    }
+  }
+  function phoneLinkChanged() {
+    if (link.status() === 'on') { lastTold = ''; tellPhone(true); }
+    if (!busy) render();
+  }
+
+  /* ---- on the phone ---- */
+  function startController() {
+    document.title = 'Rivera Royale dice';
+    const SHAKE_ON = 6, SHAKE_OFF = 2.6;      // m/s2 of movement, gravity taken out
+    const el = document.createElement('main');
+    el.className = 'ctl';
+    $app.appendChild(el);
+    let stage = { stage: 'lobby', name: '', total: null, bag: false };
+    let active = false, thrown = false, sawMotion = false, giveUp = 0;
+    let energy = 0, quick = 0, peak = 0, peakAtCalm = 0, work = 0, shakeFrom = 0, calmFrom = 0, lastAt = 0, lastSent = 0, grav = null;
+
+    function paint() {
+      const st = link.status(), s = stage;
+      let kicker = 'Dice phone', name = '', big = '', sub = '', btn = null, dice = false;
+      if (!PAIR) { big = 'This link is missing its code'; sub = 'Scan the QR code on the big screen again.'; }
+      else if (st !== 'on') {
+        big = st === 'failed' ? 'Can’t reach the big screen' : 'Connecting to the big screen…';
+        sub = st === 'failed' ? 'Check that both devices are online. Still trying.' : `Code ${PAIR}`;
+      } else if (!active) { big = 'Ready when you are'; sub = 'Hold this phone like a cup of dice.'; btn = ['activate', 'Pick up the dice']; }
+      else if (s.stage === 'ready') {
+        name = s.name; dice = true;
+        big = thrown ? 'Look at the big screen!' : 'Shake… then throw!';
+        sub = thrown ? '' : sawMotion ? 'Shake hard, swing toward the big screen, and stop.' : 'If shaking does nothing, use the button.';
+        btn = thrown ? null : ['throw', 'Throw'];
+      } else if (s.stage === 'wheel') { name = s.name; big = thrown ? 'Look at the big screen!' : 'Flick to spin the wheel!'; btn = thrown ? null : ['throw', 'Spin']; }
+      else if (s.stage === 'rolling') { name = s.name; big = 'Look at the big screen!'; }
+      else if (s.stage === 'result') { name = s.name; kicker = 'takes home'; big = peso(s.total || 0) + (s.bag ? ' + the Mystery Bag' : ''); }
+      else if (s.stage === 'choice') { name = s.name; big = 'Pera o Kapalaran?'; sub = 'The dice are waiting.'; }
+      else if (s.stage === 'show') { big = 'Watch the big screen'; }
+      else { big = 'Wait for the next player'; sub = 'The dice are resting.'; }
+      el.className = `ctl ctl-${st === 'on' ? s.stage : 'off'}${thrown ? ' is-thrown' : ''}`;
+      el.innerHTML = `<div class="ctl-top">${PAROL}<span>Rivera <em class="foil">Royale</em></span><span class="pill ${st === 'on' ? 'ok' : st === 'failed' ? 'warn' : 'busy'}">${st === 'on' ? 'Connected' : st === 'failed' ? 'Offline' : 'Connecting'}</span></div>
+        <div class="ctl-body">
+          <p class="ctl-kicker">${esc(kicker)}</p>
+          ${name ? `<h1 class="ctl-name foil">${esc(name)}</h1>` : ''}
+          ${dice ? `<div class="ctl-dice">${DICE.map((d, i) => dieHTML(i, null, 'ctl-die')).join('')}</div><div class="ctl-meter"><i></i></div>` : ''}
+          <p class="ctl-big">${esc(big)}</p>
+          ${sub ? `<p class="note">${esc(sub)}</p>` : ''}
+        </div>
+        ${btn ? `<button class="btn primary big wide" type="button" data-ctl="${btn[0]}">${btn[1]}</button>` : '<span></span>'}`;
+    }
+
+    function doThrow(power) {
+      if (thrown || link.status() !== 'on') return;
+      thrown = true;
+      link.send({ t: 'throw', p: +power.toFixed(2) });
+      buzz(60);
+      sfx.whoosh();
+      el.classList.add('is-thrown');
+      setTimeout(paint, 400);
+      // If the big screen wasn't ready for it, hand the dice back after a moment.
+      clearTimeout(giveUp);
+      const was = stage.stage;
+      giveUp = setTimeout(() => { if (thrown && stage.stage === was) { thrown = false; paint(); } }, 3000);
+    }
+
+    function onMotion(ev) {
+      if (!active) return;
+      const now = performance.now(), dt = Math.min(100, now - (lastAt || now));
+      lastAt = now;
+      let x, y, z;
+      const a = ev.acceleration;
+      if (a && a.x != null) { x = a.x; y = a.y; z = a.z; }
+      else {
+        const g = ev.accelerationIncludingGravity;
+        if (!g || g.x == null) return;
+        grav = grav || { x: g.x, y: g.y, z: g.z };          // a slow average stands in for gravity
+        grav.x += (g.x - grav.x) * 0.08; grav.y += (g.y - grav.y) * 0.08; grav.z += (g.z - grav.z) * 0.08;
+        x = g.x - grav.x; y = g.y - grav.y; z = g.z - grav.z;
+      }
+      const mag = Math.hypot(x, y, z);
+      if (mag > 1.5 && !sawMotion) { sawMotion = true; if (stage.stage === 'ready' && !thrown) paint(); }
+      energy = Math.max(mag, energy * Math.exp(-dt / 160));     // smooth, for the meter and the big screen
+      quick = Math.max(mag, quick * Math.exp(-dt / 60));        // fast, to catch the instant the hand stops
+      peak = Math.max(mag, peak * Math.exp(-dt / 500));         // how hard the last swing was
+      const wheel = stage.stage === 'wheel';
+      if (!(stage.stage === 'ready' || wheel) || thrown || link.status() !== 'on') { shakeFrom = 0; work = 0; calmFrom = 0; return; }
+      if (quick > SHAKE_ON && !shakeFrom) { shakeFrom = now; work = 0; }
+      if (shakeFrom) {
+        work += mag * dt / 1000;
+        if (quick >= SHAKE_OFF) calmFrom = 0;
+        else {
+          if (!calmFrom) { calmFrom = now; peakAtCalm = peak; }
+          // The throw is the moment the shaking stops: a real swing ends with the hand held still.
+          if (now - calmFrom > 130) {
+            const long = calmFrom - shakeFrom, armed = wheel ? long > 100 && work > 1 : long > 450 && work > 4;
+            shakeFrom = 0; calmFrom = 0; work = 0;
+            if (armed) doThrow(Math.max(0.25, Math.min(1, peakAtCalm / 32)));
+            else link.send({ t: 'shake', e: 0 });
+            return;
+          }
+        }
+      }
+      if (shakeFrom && now - lastSent > 70) {
+        lastSent = now;
+        link.send({ t: 'shake', e: +Math.min(1, energy / 26).toFixed(2) });
+        if (energy > 8) knock(0, 0.12 + Math.min(0.3, energy / 80));
+      }
+    }
+
+    el.addEventListener('click', e => {
+      const b = e.target.closest('[data-ctl]');
+      if (!b) return;
+      if (b.dataset.ctl === 'activate') {
+        active = true;
+        audio();
+        try { if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') DeviceMotionEvent.requestPermission().catch(() => {}); } catch (err) { /* not needed here */ }
+        buzz(30);
+        paint();
+      } else if (b.dataset.ctl === 'throw') doThrow(0.6);
+    });
+    window.addEventListener('devicemotion', onMotion);
+
+    // The dice on the phone rattle with the hand.
+    (function frame() {
+      const e = Math.min(1, energy / 26);
+      el.querySelectorAll('.ctl-die').forEach(d => {
+        d.style.transform = e > 0.04 ? `translate(${((Math.random() - 0.5) * e * 30).toFixed(1)}px, ${((Math.random() - 0.5) * e * 30).toFixed(1)}px) rotate(${((Math.random() - 0.5) * e * 44).toFixed(1)}deg)` : '';
+      });
+      const bar = el.querySelector('.ctl-meter i');
+      if (bar) bar.style.width = Math.round(e * 100) + '%';
+      if (performance.now() - lastAt > 300) energy *= 0.85;      // no sensor news: let the dice settle
+      requestAnimationFrame(frame);
+    })();
+
+    link.onMessage(m => {
+      if (m.t === 'buzz') { buzz(m.p); return; }
+      if (m.t !== 'stage') return;
+      const changed = m.stage !== stage.stage || m.name !== stage.name;
+      stage = m;
+      if (changed && (m.stage === 'ready' || m.stage === 'wheel' || m.stage === 'rolling')) { thrown = m.stage === 'rolling'; clearTimeout(giveUp); }
+      if (changed && m.stage === 'result') buzz(m.bag || m.total >= 500 ? [60, 40, 60, 40, 220] : 40);
+      paint();
+    });
+    link.onStatus(paint);
+    paint();
+    if (PAIR && canLink) link.start('phone', PAIR);
+  }
+
   /* ================= Actions ================= */
   const actions = {
     home() { go({ name: 'home' }, true); },
@@ -1993,6 +2388,8 @@
       } catch (e) { /* not allowed here */ }
     },
     intro() { startIntro(); },
+    'phone-on'() { startPhoneLink(); render(); },
+    'phone-off'() { stopPhoneLink(); render(); },
     voice(el) { voice.setName(el.dataset.voice); render(); voice.say(lines.test()); },
     'voice-source'(el) { voice.setSource(el.dataset.source); render(); voice.say(lines.test()); },
     'voice-test'() { voice.say(lines.test()); },
@@ -2116,15 +2513,17 @@
   function addPlayer() {
     const input = document.getElementById('new-name');
     if (!input) return;
-    const name = input.value.replace(/\s+/g, ' ').trim().slice(0, 24);
-    if (!name) { input.focus(); return; }
-    if (state.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-      ui.addError = `${name} is already on the list. Add an initial to tell them apart.`;
+    const typed = input.value.split(/[,;\n]+/).map(n => n.replace(/\s+/g, ' ').trim().slice(0, 24)).filter(Boolean);
+    if (!typed.length) { input.focus(); return; }
+    const have = new Set(state.players.map(p => p.name.toLowerCase())), fresh = [], dup = [];
+    typed.forEach(n => { const k = n.toLowerCase(); if (have.has(k)) dup.push(n); else { have.add(k); fresh.push(n); } });
+    if (!fresh.length) {
+      ui.addError = `${list(dup)} ${dup.length > 1 ? 'are' : 'is'} already on the list. Add an initial to tell them apart.`;
       render();
       return;
     }
-    if (!commit(s => s.players.push({ id: newId(), name, status: 'waiting', faces: null, dice: null, total: null, at: Date.now() }))) return;
-    ui.addError = '';
+    if (!commit(s => fresh.forEach((name, i) => s.players.push({ id: newId() + i, name, status: 'waiting', faces: null, dice: null, total: null, at: Date.now() + i })))) return;
+    ui.addError = dup.length ? `Skipped ${list(dup)}: already on the list.` : '';
     input.value = '';
     render();
   }
@@ -2184,8 +2583,15 @@
   document.addEventListener('pointerdown', stayAwake, { passive: true });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && wake === null) stayAwake(); });
 
-  render();
-  if (hasHost) connect();
-  voice.init();
+  if (!hasHost && QS.has('pair')) {
+    startController();                       // this device is the dice
+  } else {
+    link.onMessage(fromPhone);
+    link.onStatus(phoneLinkChanged);
+    render();
+    if (hasHost) connect();
+    voice.init();
+    if (canLink && store.get(LS_LINK) === 'on') startPhoneLink();
+  }
 })();
 </script>

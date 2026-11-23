@@ -50,6 +50,29 @@ Tagalog as written. Every line always appears as text on screen.
 In the script, whole Tagalog sentences are wrapped in `[tl]...[/tl]` so a Filipino voice can take
 them; the marks never show in the captions.
 
+## The dice phone
+
+A second phone can be the dice. People shake it, swing it toward the big screen and stop, and the
+three dice fly onto the big screen. A flick of the phone also spins the roulette, and the phone
+buzzes as each die lands.
+
+This needs the game's own web address (GitHub Pages), because a page inside Claude is not allowed
+to read a phone's motion sensors or connect two devices directly.
+
+1. In the repository on GitHub: **Settings → Pages → Deploy from a branch**, pick this branch and
+   `/ (root)`, and save. After a minute the game is at `https://<user>.github.io/<repo>/`.
+2. Open that address on the big screen and add the names (several at once, separated by commas).
+3. **Host tools → Connect a phone**, then scan the QR code with the phone and tap
+   **Pick up the dice**.
+
+How it works: the big screen stays in charge of the game and draws every result; the phone only
+reports "shaking" and "thrown". The throw is the moment the shaking stops. The two devices talk
+directly (WebRTC), introduced by the free public PeerJS service, so both need internet. If the link
+drops, the phone keeps retrying and the dice can always be rolled from the big screen.
+
+On this address the record is saved in the big screen's browser, and the announcer uses the
+device's own voice (a Filipino one if installed).
+
 ## Files
 
 - `pamasko-dice.html` is the game. It is the source for the published Claude artifact, where the
