@@ -656,6 +656,7 @@
   const LS_GAME = 'pamasko-dice:game';
   const LS_SOUND = 'pamasko-dice:sound';
   const LS_VOICE = 'pamasko-dice:voice';
+  const LS_SOURCE = 'pamasko-dice:voice-source';
   const LS_INTRO = 'pamasko-dice:intro-seen';
 
   /* ================= Helpers ================= */
@@ -668,6 +669,7 @@
   const list = names => names.length < 2 ? names.join('') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
   const newId = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
   const oneOf = arr => arr[Math.floor(Math.random() * arr.length)];
+  const untag = text => text.replace(/\[\/?tl\]/g, '');   // spoken lines mark Tagalog sentences; captions don't show the marks
   const words = (text, gold) => esc(text).split(' ').map((w, i) => `<span class="w${gold ? ' foil' : ''}" style="--i:${i}">${w} </span>`).join('');
   const store = {
     get(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
@@ -921,18 +923,26 @@
   const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* not available */ } };
 
   /* ================= The announcer =================
-     Lines are spoken in a Claude voice where the page is allowed one, else in the device's own
-     voice, else not at all. Every line is also on screen, so the show works in silence. */
+     Lines are spoken by a Claude voice or by the device's own voice, whichever the host picks
+     and the page is allowed. Every line is also on screen, so the show works in silence.
+     Whole Tagalog sentences are marked [tl]...[/tl] so a Filipino voice can take them. */
   const voice = (() => {
     const NAMES = ['buttery', 'airy', 'glassy', 'rounded'];
     const RATE = 1.06;
-    let tts = null, kind = 'none', blocked = false, quietUntil = 0, talking = false, lineHandler = null, deviceVoice = null, reading = 0;
+    let tts = null, filCode = '', blocked = false, quietUntil = 0, talking = false, lineHandler = null, reading = 0;
+    let enVoice = null, filVoice = null;
     let name = NAMES.includes(store.get(LS_VOICE)) ? store.get(LS_VOICE) : NAMES[0];
+    let source = store.get(LS_SOURCE) === 'device' ? 'device' : 'claude';
     let synth = null;
     try { synth = window.speechSynthesis || null; } catch (e) { synth = null; }
+    const hasDevice = () => !!synth && typeof window.SpeechSynthesisUtterance === 'function';
+    const kind = () => (source === 'device' && hasDevice() ? 'device' : tts ? 'claude' : hasDevice() ? 'device' : 'none');
 
-    // How the words are said out loud, where that differs from how they are written.
-    const spoken = text => text.replace(/\bMga\b/g, 'Manga').replace(/\bmga\b/g, 'manga').replace(/₱([\d,]+)/g, '$1 pesos').replace(/[‘’]/g, "'").replace(/[“”]/g, '');
+    const parts = text => text.split(/\[tl\]|\[\/tl\]/).map((t, i) => ({ text: t.trim(), tl: i % 2 === 1 })).filter(p => p.text);
+    const tidy = text => untag(text).replace(/₱([\d,]+)/g, '$1 pesos').replace(/[‘’]/g, "'").replace(/[“”]/g, '');
+    // An English voice needs "mga" spelled the way it sounds; a Filipino voice reads it as written.
+    const forEnglish = text => tidy(text).replace(/\bMga\b/g, 'Manga').replace(/\bmga\b/g, 'manga');
+    const forFilipino = tidy;
     const guess = text => Math.max(2200, text.split(/\s+/).length * 340 + 900);
 
     function setTalking(on) {
@@ -940,38 +950,50 @@
       const btn = document.getElementById('sound-btn');
       if (btn) btn.classList.toggle('speaking', on);
     }
-    function pickDeviceVoice() {
+    function pickDeviceVoices() {
       try {
-        const all = synth.getVoices();
-        deviceVoice = all.find(v => /^en[-_]US/i.test(v.lang) && /google/i.test(v.name)) || all.find(v => /^en[-_](US|GB|PH|AU)/i.test(v.lang)) || all.find(v => /^en/i.test(v.lang)) || null;
-      } catch (e) { deviceVoice = null; }
+        const all = synth.getVoices(), lang = v => String(v.lang || '').replace('_', '-');
+        filVoice = all.find(v => /^(fil|tl)(-|$)/i.test(lang(v))) || null;
+        enVoice = all.find(v => /^en-US/i.test(lang(v)) && /google/i.test(v.name)) || all.find(v => /^en-(US|GB|PH|AU)/i.test(lang(v))) || all.find(v => /^en/i.test(lang(v))) || null;
+      } catch (e) { filVoice = null; enVoice = null; }
     }
     function failed(e) {
       const code = e && e.code;
       if (code === 'not_granted' || code === 'unavailable') blocked = true;        // the viewer's choice: stay silent
       else if (code === 'rate_limited') quietUntil = Date.now() + ((e && e.retryAfterMs) || 60000);
     }
-    const ready = () => soundOn && !blocked && kind !== 'none' && Date.now() >= quietUntil;
+    const ready = () => soundOn && !blocked && kind() !== 'none' && Date.now() >= quietUntil;
 
     async function init() {
       if (hasHost) { try { tts = await window.claude.use('tts'); } catch (e) { tts = null; } }
       if (tts) {
-        kind = 'claude';
         try { tts.onState(e => setTalking(e.state !== 'idle')); } catch (e) { /* no state events */ }
-        try { tts.onLine(e => { if (lineHandler && e && typeof e.id === 'string' && e.id[0] === 'b') lineHandler(+e.id.slice(1)); }); } catch (e) { /* no line events */ }
-      } else if (synth && typeof window.SpeechSynthesisUtterance === 'function') {
-        kind = 'device';
-        pickDeviceVoice();
-        try { synth.addEventListener('voiceschanged', pickDeviceVoice); } catch (e) { /* fine */ }
+        try { tts.onLine(e => { if (lineHandler && e && typeof e.id === 'string' && e.id[0] === 'b') lineHandler(parseInt(e.id.slice(1), 10)); }); } catch (e) { /* no line events */ }
+        // Does this voice service read Filipino? If so the Tagalog sentences go to it.
+        try {
+          const langs = typeof tts.languages === 'function' ? await tts.languages().catch(() => null) : null;
+          if (Array.isArray(langs)) filCode = langs.includes('fil') ? 'fil' : langs.includes('tl') ? 'tl' : '';
+        } catch (e) { filCode = ''; }
+      }
+      if (hasDevice()) {
+        pickDeviceVoices();
+        try { synth.addEventListener('voiceschanged', () => { pickDeviceVoices(); if (route.name === 'home') render(); }); } catch (e) { /* fine */ }
       }
       if (route.name === 'home') render();
+    }
+
+    // One written line as the Claude voice should read it: split by language only where Filipino is on offer.
+    function claudeLines(text, tag) {
+      if (!filCode) return [{ text: forEnglish(text), language: 'en', id: tag }];
+      return parts(text).map((p, i) => ({ text: p.tl ? forFilipino(p.text) : forEnglish(p.text), language: p.tl ? filCode : 'en', id: tag ? `${tag}_${i}` : undefined }));
     }
 
     function deviceSay(text, onStart) {
       return new Promise(done => {
         try {
-          const u = new window.SpeechSynthesisUtterance(spoken(text));
-          if (deviceVoice) { u.voice = deviceVoice; u.lang = deviceVoice.lang; } else u.lang = 'en-US';
+          const v = filVoice || enVoice;
+          const u = new window.SpeechSynthesisUtterance(filVoice ? forFilipino(text) : forEnglish(text));
+          if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-US';
           u.rate = 1.05;
           let over = false, begun = false;
           const begin = () => { if (begun) return; begun = true; setTalking(true); if (onStart) onStart(); };
@@ -990,7 +1012,7 @@
       if (!ready()) return Promise.resolve(false);
       reading += 1;
       lineHandler = null;
-      if (kind === 'claude') return tts.speak(spoken(text), { voice: name, rate: RATE, language: 'en' }).then(() => true, e => { failed(e); return false; });
+      if (kind() === 'claude') return tts.speak(claudeLines(text), { voice: name, rate: RATE }).then(() => true, e => { failed(e); return false; });
       try { synth.cancel(); } catch (e) { /* nothing to cancel */ }
       return deviceSay(text);
     }
@@ -999,9 +1021,11 @@
     function script(texts, onLine) {
       if (!ready()) return Promise.resolve(false);
       const mine = ++reading;
-      if (kind === 'claude') {
+      if (kind() === 'claude') {
         lineHandler = onLine;
-        return tts.speak(texts.map((text, i) => ({ text: spoken(text), id: 'b' + i })), { voice: name, rate: RATE, language: 'en' })
+        const all = [];
+        texts.forEach((text, i) => all.push(...claudeLines(text, 'b' + i)));
+        return tts.speak(all, { voice: name, rate: RATE })
           .then(() => true, e => { failed(e); return false; })
           .then(ok => { if (reading === mine) lineHandler = null; return ok; });
       }
@@ -1013,21 +1037,29 @@
     function stop() {
       reading += 1;
       lineHandler = null;
-      try { if (kind === 'claude') tts.stop().catch(() => {}); else if (synth) synth.cancel(); } catch (e) { /* nothing playing */ }
+      try { if (tts) tts.stop().catch(() => {}); } catch (e) { /* nothing playing */ }
+      try { if (synth) synth.cancel(); } catch (e) { /* nothing playing */ }
       setTalking(false);
     }
 
     return {
-      init, say, script, stop, guess, NAMES,
-      kind: () => kind,
+      init, say, script, stop, guess, NAMES, kind,
+      sources: () => [tts ? 'claude' : '', hasDevice() ? 'device' : ''].filter(Boolean),
+      setSource(k) { source = k === 'device' ? 'device' : 'claude'; store.set(LS_SOURCE, source); stop(); },
+      hasFilipino: () => !!filVoice,
       blocked: () => blocked,
       talking: () => talking,
       name: () => name,
       setName(n) { if (NAMES.includes(n)) { name = n; store.set(LS_VOICE, n); } },
       describe() {
         if (blocked) return 'Reading aloud is switched off for this page. Turn it back on in the page’s Permissions menu.';
-        if (kind === 'claude') return 'A Claude voice announces the show. Pick the one that sounds most like a game-show host.';
-        if (kind === 'device') return 'This device’s built-in voice announces the show.';
+        const k = kind();
+        if (k === 'claude') return filCode
+          ? 'A Claude voice announces the show, and its Filipino voice reads the Tagalog sentences.'
+          : 'A Claude voice announces the show. It is an English voice, so Tagalog words come out with an accent.';
+        if (k === 'device') return filVoice
+          ? `This device’s Filipino voice (${filVoice.name}) announces the show.`
+          : 'This device’s English voice announces the show. To hear Tagalog read properly, install a Filipino voice in the device’s text-to-speech settings, then reopen this page.';
         return 'No voice is available in this app, so the lines appear as big text only. For the voiceover, open this page in Chrome.';
       },
     };
@@ -1059,7 +1091,7 @@
     tookBag: n => `The bag! Brave. Nobody knows what's inside... except RJ. Good luck, ${n}.`,
     keptCash: n => `${n} keeps the cash. Fair enough.`,
     goodbye: () => 'And now... that really is our show. Maligayang Pasko, Rivera family!',
-    test: () => 'Mga Tito, mga Tita. Welcome to Rivera Royale! Pera... o kapalaran?',
+    test: () => 'Mga Tito, mga Tita. Welcome to Rivera Royale! [tl]Si RJ, ang pinaka-poging pinsan at pamangkin ninyo, ay may inihandang simpleng palaro.[/tl] Pera... o kapalaran?',
   };
 
   /* ================= Confetti and sparks ================= */
@@ -1290,6 +1322,10 @@
         <button class="btn quiet" data-action="remove" data-id="${p.id}" data-confirm="Tap again to remove"${lock}>Remove</button>
       </span></li>`;
     }).join('');
+    const srcs = voice.sources();
+    const srcLabel = k => (k === 'claude' ? 'Claude voice' : voice.hasFilipino() ? 'This device’s Filipino voice' : 'This device’s voice');
+    const sourcePick = srcs.length > 1 && !voice.blocked()
+      ? `<div class="voice-pick">${srcs.map(k => `<button class="btn quiet${k === voice.kind() ? ' on' : ''}" data-action="voice-source" data-source="${k}">${srcLabel(k)}</button>`).join('')}</div>` : '';
     const voices = voice.kind() === 'claude' && !voice.blocked()
       ? `<div class="voice-pick">${voice.NAMES.map(v => `<button class="btn quiet${v === voice.name() ? ' on' : ''}" data-action="voice" data-voice="${v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join('')}</div>` : '';
     const host = `<details class="host"${ui.hostOpen ? ' open' : ''}>
@@ -1302,7 +1338,8 @@
           ${twist ? `<div><dt>Lowest-roller bag</dt><dd>${swapped.length ? esc(list(swapped.map(p => p.name))) : 'Not given yet'}</dd></div>` : ''}
         </dl>
         <div class="voice-box">
-          <p class="fine">${voice.describe()}</p>
+          ${sourcePick}
+          <p class="fine">${esc(voice.describe())}</p>
           ${voices}
           <div class="danger">
             ${voice.kind() !== 'none' && !voice.blocked() ? '<button class="btn quiet" data-action="voice-test">Test the voice</button>' : ''}
@@ -1556,7 +1593,7 @@
       el.classList.toggle('dark', !!b.dark);
       stage.className = 'show-stage' + (b.cls ? ' ' + b.cls : '');
       stage.innerHTML = b.html || `${b.kicker ? `<p class="show-kicker">${esc(b.kicker)}</p>` : ''}<div class="show-art">${b.art || ''}</div>
-        ${b.big ? `<h1 class="show-big">${words(b.big, b.foil)}</h1>` : ''}${b.vo ? `<p class="show-cap">${esc(b.vo)}</p>` : ''}`;
+        ${b.big ? `<h1 class="show-big">${words(b.big, b.foil)}</h1>` : ''}${b.vo ? `<p class="show-cap">${esc(untag(b.vo))}</p>` : ''}`;
       dots.forEach((d, i) => d.classList.toggle('on', i <= k));
       const sound = sfx[b.sound || 'slam'];
       if (sound) sound(b.soundFor);
@@ -1602,10 +1639,10 @@
         vo: `Ladies and gentlemen. Mga Tito. Mga Tita. ${lola ? `And the one and only, ${lola}.` : 'And all the cousins in the back.'} Please put down your plates. This is important.` },
       { kicker: 'Welcome to', art: logoHTML(), sound: 'fanfare',
         vo: 'Welcome... to Rivera Royale! The only game show in the world filmed entirely in this living room.' },
-      { kicker: 'Brought to you by', big: 'Rafael “RJ” Rivera', art: '<div class="medal">RJ</div>',
-        vo: 'Tonight is brought to you by Rafael. Yes, that Rafael. You know him as RJ. He prepared a little something this year. And no... it is not another fruit salad.' },
+      { kicker: 'May inihanda para sa inyo si', big: 'Ang pinaka-poging pinsan at pamangkin', art: '<div class="medal">RJ</div>',
+        vo: 'RJ prepared something for you. [tl]Si RJ, ang pinaka-poging pinsan at pamangkin ninyo, ay may inihandang simpleng palaro. Opo. Siya mismo ang nagsulat niyan.[/tl]' },
       { kicker: 'Instead of an envelope', big: 'He built a game show.', art: `<div class="device">${logoHTML()}<span class="spark s1">${STAR_ICON}</span><span class="spark s2">${STAR_ICON}</span><span class="spark s3">${STAR_ICON}</span></div>`,
-        vo: `Instead of handing out envelopes like a normal person, RJ sat down with an AI named Claude... and built you an entire game show. Welcome to the future, ${tita}.` },
+        vo: `Instead of handing out envelopes like a normal person, he built you an entire game show. Simple daw. And no, ${tita}... it is not another fruit salad.` },
       { kicker: 'How it works', big: `${peso(STAKE)} with your name on it`, art: `<div class="fan">${bill}${bill}${bill}</div>`,
         vo: 'Here is how it works. RJ is holding three hundred pesos with your name on it.' },
       { kicker: 'But first, one question', big: 'Pera… o kapalaran?', art: `<div class="versus">${bill}<i>o</i>${showDice}</div>`,
@@ -1641,7 +1678,7 @@
     const bill = `<div class="bill"><small>Pamasko</small>${peso(STAKE)}</div>`;
     const cr = (role, who) => `<p class="cr"><small>${esc(role)}</small>${[].concat(who).map(w => `<b>${esc(w)}</b>`).join('')}</p>`;
     const credits = `<div class="credits"><div class="credits-roll">${logoHTML()}
-      ${cr('Created and hosted by', 'Rafael “RJ” Rivera')}${cr('Executive producer', 'RJ')}${cr('Head of finance', 'RJ’s wallet')}
+      ${cr('Created and hosted by', 'RJ')}${cr('Pinaka-poging pinsan at pamangkin', 'RJ (ayon kay RJ)')}${cr('Head of finance', 'RJ’s wallet')}
       ${cr('Starring', P.map(p => p.name))}
       ${cr('Dice wrangler', 'Kapalaran')}${cr('Wheel operator', 'Swerte')}${cr('Catering', 'Whoever cooked. Salamat po!')}${cr('Built with', 'Claude')}
       <p class="cr"><small>No Titos or Titas were harmed in the making of this show</small></p>
@@ -1965,6 +2002,7 @@
     },
     intro() { startIntro(); },
     voice(el) { voice.setName(el.dataset.voice); render(); voice.say(lines.test()); },
+    'voice-source'(el) { voice.setSource(el.dataset.source); render(); voice.say(lines.test()); },
     'voice-test'() { voice.say(lines.test()); },
     turn(el) {
       const p = player(el.dataset.id);

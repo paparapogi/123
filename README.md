@@ -41,8 +41,14 @@ while keeping the names (use that after a practice round), or erase everything. 
 got the lowest-roller bag after the surprise has been revealed.
 
 **Voiceover.** The announcer speaks in a Claude voice when the page is opened as a Claude artifact
-in a Chromium browser such as Chrome. Elsewhere it uses the device's built-in voice where there is
-one, and every line always appears as text on screen.
+in a Chromium browser such as Chrome, or in the device's own text-to-speech voice; where both are
+available, Host tools lets you switch between them and test each. The Claude voices are English,
+so Tagalog comes out with an accent unless the service also offers a Filipino voice (the page
+checks, and sends the Tagalog sentences to it). A device with a Filipino voice installed reads
+Tagalog as written. Every line always appears as text on screen.
+
+In the script, whole Tagalog sentences are wrapped in `[tl]...[/tl]` so a Filipino voice can take
+them; the marks never show in the captions.
 
 ## Files
 
