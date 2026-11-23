@@ -552,6 +552,26 @@
   .forever .wheel-rot { animation: spin 6s linear infinite; }
   .bagbig svg { display: block; width: clamp(6rem, 26vmin, 13rem); height: auto; }
 
+  /* The ending: a winner, a credits roll, then the lights go out for one more thing. */
+  .show.dark { background: #000; }
+  .show.dark .show-rays { opacity: 0; }
+  .show.dark::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(46% 78% at 50% 0%, rgba(255, 233, 168, .2), transparent 72%); animation: glowin 1.4s ease both; }
+  @keyframes glowin { from { opacity: 0; } }
+  .show-stage.flicker .show-big { animation: flicker 1.5s steps(1, end) both; }
+  .show-stage.flicker .show-big .w { animation: none; }
+  @keyframes flicker { 0% { opacity: 0; } 12% { opacity: 1; } 18% { opacity: .15; } 26% { opacity: 1; } 34% { opacity: .3; } 40%, 100% { opacity: 1; } }
+  .winner { display: flex; flex-direction: column; align-items: center; gap: .2rem; }
+  .winner svg { width: clamp(3rem, 12vmin, 6rem); height: auto; color: var(--gold); filter: drop-shadow(0 0 1rem rgba(242, 192, 74, .7)); }
+  .winner span { font: 400 clamp(2.2rem, 10vmin, 5.5rem)/1 var(--display); }
+  .credits { --ch: min(66vh, 36rem); position: relative; width: min(100%, 34rem); height: var(--ch); overflow: hidden; -webkit-mask: linear-gradient(transparent, #000 16%, #000 84%, transparent); mask: linear-gradient(transparent, #000 16%, #000 84%, transparent); }
+  .credits-roll { position: absolute; left: 0; right: 0; top: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.7rem; text-align: center; animation: credits 16s linear both; }
+  @keyframes credits { to { transform: translateY(calc(-100% - var(--ch))); } }
+  .credits .logo { --logo: clamp(2.6rem, 11vmin, 5rem); margin-bottom: .6rem; }
+  .cr { display: flex; flex-direction: column; gap: .25rem; }
+  .cr small { font: 800 .8rem/1.3 var(--body); letter-spacing: .26em; text-transform: uppercase; color: var(--gold); }
+  .cr b { font: 400 clamp(1.5rem, 5vmin, 2.4rem)/1.15 var(--display); letter-spacing: .03em; text-transform: uppercase; }
+  .wrapup { display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center; padding: 2rem 0; }
+
   .banner { position: fixed; inset: 0; z-index: 35; display: grid; place-items: center; pointer-events: none; padding: 1rem; text-align: center; background: radial-gradient(circle, rgba(5, 15, 12, .9), rgba(5, 15, 12, .6)); transition: opacity .3s ease; }
   .banner.out { opacity: 0; }
   .banner-big { font: 400 clamp(3rem, 17vmin, 11rem)/.98 var(--display); letter-spacing: .02em; text-transform: uppercase; text-wrap: balance; }
@@ -591,7 +611,9 @@
     .row.fresh, .result, .wheel-wrap, .die.rolling .die-hop, .die.rolling .die-shadow, .die.teeter-x .die-hop, .die.teeter-y .die-hop,
     .roll.is-ready .die-hop, .roll.is-shaking .die .die-hop, .die.landed .die-ring, .die-rays, .tray::before, .tray.bump, .roll.is-jackpot .total-amt,
     .offer:not(.done) .offer-head svg, .bagbig svg, .pill.busy::before, .icon-btn.speaking, .show-rays, .show-kicker, .show-art, .show-cap, .banner-sub,
-    .on-air, .spark, .die.tumble .cube, .forever .wheel-rot, .wheel.ready .wheel-hub { animation: none; }
+    .on-air, .spark, .die.tumble .cube, .forever .wheel-rot, .wheel.ready .wheel-hub, .show.dark::before, .show-stage.flicker .show-big, .credits-roll { animation: none; }
+    .credits { overflow: auto; -webkit-mask: none; mask: none; }
+    .credits-roll { position: static; }
     .die.mini .die-tilt { animation: none; transform: rotateX(-22deg) rotateY(-30deg); }
   }
 </style>
@@ -638,7 +660,7 @@
   const list = names => names.length < 2 ? names.join('') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
   const newId = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
   const oneOf = arr => arr[Math.floor(Math.random() * arr.length)];
-  const words = (text, from) => esc(text).split(' ').map((w, i) => `<span class="w" style="--i:${(from || 0) + i}">${w} </span>`).join('');
+  const words = (text, gold) => esc(text).split(' ').map((w, i) => `<span class="w${gold ? ' foil' : ''}" style="--i:${i}">${w} </span>`).join('');
   const store = {
     get(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { window.localStorage.setItem(k, v); return true; } catch (e) { return false; } },
@@ -879,6 +901,7 @@
     star() { [880, 1174.7, 1568].forEach((f, i) => bell(f, i * 0.09, 0.5, 0.15)); },
     drumroll(ms) { const n = ms / 1000; for (let t = 0; t < n; t += 0.052) noise(t, 0.045, 0.1 + 0.32 * (t / n), 300 + Math.random() * 160); },
     bust() { tone(311, 0, 0.32, 'triangle', 0.16); tone(233, 0.3, 0.6, 'triangle', 0.16); },
+    rumble() { tone(55, 0, 1.8, 'sine', 0.35); tone(82.4, 0.1, 1.4, 'triangle', 0.12); noise(0, 1.3, 0.14, 140, 60); },
     fanfare() { [[392, 0], [523.25, 0.14], [659.25, 0.28], [783.99, 0.42], [1046.5, 0.62]].forEach(([f, t]) => { tone(f, t, 0.5, 'sawtooth', 0.07); bell(f, t, 0.7, 0.12); }); },
     // A few bars of Jingle Bells on bells for the biggest wins.
     jackpot() {
@@ -1023,10 +1046,11 @@
       if (w >= 500) return `${num(w)} pesos from the wheel! ${n} takes home ${t} pesos!`;
       return `${num(w)} pesos from the wheel. That makes ${t} pesos for ${n}.`;
     },
-    lowest: (n, t) => `And now... the lowest roll of the night. ${n}. You rolled ${num(t)} pesos. Keep it... or trade it for the Mystery Bag?`,
+    lowest: (n, t) => `${n}. You can keep your ${num(t)} pesos... or trade them for this Mystery Bag. Nobody knows what's inside. Pera... o Mystery Bag?`,
+    oneMore: () => 'And one more thing. Nobody won the roulette jackpot tonight... so that Mystery Bag is still on the table.',
     tookBag: n => `The bag! Brave. Nobody knows what's inside... except RJ. Good luck, ${n}.`,
     keptCash: n => `${n} keeps the cash. Fair enough.`,
-    goodbye: () => 'And that’s our show! Maligayang Pasko, Rivera family!',
+    goodbye: () => 'And now... that really is our show. Maligayang Pasko, Rivera family!',
     test: () => 'Mga Tito, mga Tita. Welcome to Rivera Royale! Pera... o kapalaran?',
   };
 
@@ -1098,7 +1122,7 @@
   function banner(big, sub, ms) {
     const el = document.createElement('div');
     el.className = 'banner';
-    el.innerHTML = `<div><p class="banner-big foil">${words(big)}</p>${sub ? `<p class="banner-sub">${esc(sub)}</p>` : ''}</div>`;
+    el.innerHTML = `<div><p class="banner-big">${words(big, true)}</p>${sub ? `<p class="banner-sub">${esc(sub)}</p>` : ''}</div>`;
     document.body.appendChild(el);
     sfx.slam();
     setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 350); }, ms || 1300);
@@ -1198,7 +1222,7 @@
 
     let next;
     if (f) {
-      next = '<p class="note">The dice are closed. The finale has started.</p>';
+      next = '<p class="note">The dice are closed. The show has ended.</p>';
     } else {
       const chips = waiting.map(p => `<button class="name-chip" data-action="turn" data-id="${p.id}"${dis}>${esc(p.name)}</button>`).join('');
       const hint = !P.length
@@ -1232,17 +1256,19 @@
       ? `<div class="progress"><span class="pips" aria-hidden="true">${pips}</span><span>${done.length} of ${P.length} played</span></div><ol class="record">${rows}</ol>`
       : '<p class="note">Results land here as each person takes the money or rolls.</p>';
 
-    const pool = rolled.filter(p => !wonBag(p));
+    // The lobby never says what the ending holds: until the credits have rolled it is just "the end of the show".
+    const revealed = !!f && f.stage === 'revealed';
+    const twist = revealed && (f.picked.length > 0 || !!f.pending);     // the surprise is out in the open
     let fin;
     if (f) {
-      const open = !!f.pending || f.picked.some(id => !f.decisions[id]);
-      fin = `<p>${open ? 'The finale is under way.' : 'The finale is done. Maligayang Pasko!'}</p>
-        <button class="btn primary" data-action="finale">${open ? 'Continue the finale' : 'See the finale'}</button>`;
+      const open = !revealed || !!f.pending || f.picked.some(id => !f.decisions[id]);
+      fin = `<p>${!revealed ? 'The dice are closed. Time for the ending.' : open ? 'One more thing is under way.' : 'That’s a wrap. Maligayang Pasko!'}</p>
+        <button class="btn primary" data-action="finale">${!revealed ? 'Roll the credits' : open ? 'Continue' : 'See the ending'}</button>`;
     } else {
-      fin = `<p>When everyone’s done, the lowest roller gets one last question: keep the winnings, or hand them back for a Mystery Bag. A tie is settled with a roll-off.</p>
-        ${waiting.length && rolled.length ? `<p class="note">Still to play: ${esc(list(waiting.map(p => p.name)))}.</p>` : ''}
-        <button class="btn primary" data-action="start-finale" data-confirm="Tap again. This closes the dice."${pool.length && !locked ? '' : ' disabled'}>Reveal the lowest roller</button>
-        ${pool.length ? '' : '<p class="fine">Opens once someone has rolled.</p>'}`;
+      fin = `<p>When everyone has had their turn, close the dice and roll the credits.</p>
+        ${waiting.length && done.length ? `<p class="note">Still to play: ${esc(list(waiting.map(p => p.name)))}.</p>` : ''}
+        <button class="btn primary" data-action="start-finale" data-confirm="Tap again. This closes the dice."${done.length && !locked ? '' : ' disabled'}>End the show</button>
+        ${done.length ? '' : '<p class="fine">Opens once someone has played.</p>'}`;
     }
 
     const paid = rolled.filter(p => !tookBag(p)).reduce((s, p) => s + p.total, 0);
@@ -1265,7 +1291,7 @@
           <div><dt>Dice winnings to pay out</dt><dd>${peso(paid)}</dd></div>
           <div><dt>Pera: took the ${peso(STAKE)}</dt><dd>${kept.length} × ${peso(STAKE)} = ${peso(kept.length * STAKE)}</dd></div>
           <div><dt>Roulette jackpot bag</dt><dd>${jackpotBy ? esc(jackpotBy.name) : 'Still on the wheel'}</dd></div>
-          <div><dt>Lowest-roller bag</dt><dd>${swapped.length ? esc(list(swapped.map(p => p.name))) : 'Not given yet'}</dd></div>
+          ${twist ? `<div><dt>Lowest-roller bag</dt><dd>${swapped.length ? esc(list(swapped.map(p => p.name))) : 'Not given yet'}</dd></div>` : ''}
         </dl>
         <div class="voice-box">
           <p class="fine">${voice.describe()}</p>
@@ -1276,9 +1302,9 @@
           </div>
         </div>
         ${manage ? `<ul class="manage">${manage}</ul>` : ''}
-        ${f ? '<p class="fine">Undo the finale to change or remove a turn.</p>' : ''}
+        ${f ? '<p class="fine">Undo the ending to change or remove a turn.</p>' : ''}
         <div class="danger">
-          ${f ? `<button class="btn quiet" data-action="undo-finale" data-confirm="Tap again to undo the finale"${dis}>Undo the finale</button>` : ''}
+          ${f ? `<button class="btn quiet" data-action="undo-finale" data-confirm="Tap again to undo the ending"${dis}>Undo the ending</button>` : ''}
           ${done.length || f ? `<button class="btn quiet" data-action="clear-results" data-confirm="Tap again to clear all results"${dis}>Clear results, keep the names</button>` : ''}
           <button class="btn quiet" data-action="reset" data-confirm="Tap again to erase everything"${dis}>Erase everything and start over</button>
         </div>
@@ -1298,7 +1324,7 @@
       <div class="lobby">
         <div class="lobby-col">
           <section class="sec"><h2>Who’s next?</h2>${next}</section>
-          <section class="card"><div class="card-head">${ICON_BAG}<h2>One last question for the lowest roller</h2></div>${fin}</section>
+          <section class="card"><div class="card-head">${twist ? ICON_BAG : PAROL}<h2>${twist ? 'One more thing' : 'The end of the show'}</h2></div>${fin}</section>
         </div>
         <section class="sec"><h2>The record</h2>${record}</section>
       </div>
@@ -1398,9 +1424,14 @@
     const anim = ui.animRound;
     const locked = !sync.ready || sync.readOnly;
     const dis = locked ? ' disabled' : '';
+    if (f.stage !== 'revealed') {
+      return `<section class="finale"><button class="back" data-action="home">‹ The record</button>
+        <div class="wrapup"><h1>That’s the show</h1><p class="note">The dice are closed.</p>
+          <button class="btn primary big" data-action="credits"${dis}>Roll the credits</button></div></section>`;
+    }
     let html = `<section class="finale">
       <button class="back" data-action="home">‹ The record</button>
-      <h1>${f.slots > 1 ? 'The lowest rollers' : 'The lowest roller'}</h1>`;
+      <h1>${f.picked.length || f.pending ? 'One more thing' : 'That’s the show'}</h1>`;
 
     f.rounds.forEach((r, n) => {
       const live = anim === n;
@@ -1444,14 +1475,14 @@
         </div></div>`;
     }).join('');
 
-    if (!f.picked.length) html += '<p class="note">Nobody is left to offer the bag to.</p>';
+    if (!f.picked.length) html += '<p class="closing foil">Maligayang Pasko!</p><button class="btn ghost wide" data-action="home">Back to the record</button>';
     if (f.picked.length && f.picked.every(id => f.decisions[id])) {
       const jackpotOpen = !state.players.some(wonBag);
       if (jackpotOpen && f.slots < 2 && bagPool(state).length) {
-        html += `<div class="round"><p><b>The roulette jackpot was never won,</b> so its Mystery Bag is still here. You can offer it to the next lowest roller.</p>
-          <button class="btn ghost wide" data-action="offer-next"${dis}>Offer it to the next lowest</button></div>`;
+        html += `<div class="round"><p><b>Nobody won the roulette Jackpot,</b> so its Mystery Bag is still on the table.</p>
+          <button class="btn ghost wide" data-action="offer-next"${dis}>Offer it to the next lowest roller</button></div>`;
       }
-      html += '<p class="closing foil">That’s the show. Maligayang Pasko!</p><button class="btn ghost wide" data-action="home">Back to the record</button>';
+      html += '<p class="closing foil">Now that’s the show. Maligayang Pasko!</p><button class="btn ghost wide" data-action="home">Back to the record</button>';
     }
     return html + '</section>';
   }
@@ -1483,8 +1514,75 @@
     window.scrollTo(0, 0);
   }
 
-  /* ================= The show intro ================= */
-  let intro = null;
+  /* ================= Full-screen sequences: the intro and the ending ================= */
+  let showing = null;
+  const waitMs = ms => new Promise(r => setTimeout(r, ms));
+
+  /** Plays a list of beats full screen. Spoken beats follow the announcer line by line; silent beats hold for a set time. */
+  function playShow(beats, label, onDone) {
+    if (showing) return;
+    const el = document.createElement('div');
+    el.className = 'show';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', label);
+    el.innerHTML = `<div class="show-rays"></div><div class="show-stage"></div>
+      <div class="show-foot"><span class="show-dots">${beats.map(() => '<i></i>').join('')}</span>
+        <span class="show-acts"><button class="btn quiet" type="button" data-show="next">Next</button><button class="btn quiet" type="button" data-show="skip">Skip</button></span></div>`;
+    document.body.appendChild(el);
+    const stage = el.querySelector('.show-stage'), dots = [...el.querySelectorAll('.show-dots i')];
+    let at = -1, run = 0, over = false;
+
+    const finish = () => {
+      if (over) return;
+      over = true;
+      run += 1;
+      voice.stop();
+      el.remove();
+      showing = null;
+      onDone();
+    };
+    const show = k => {
+      if (over || k <= at || k >= beats.length) return;
+      at = k;
+      const b = beats[k];
+      el.classList.toggle('dark', !!b.dark);
+      stage.className = 'show-stage' + (b.cls ? ' ' + b.cls : '');
+      stage.innerHTML = b.html || `${b.kicker ? `<p class="show-kicker">${esc(b.kicker)}</p>` : ''}<div class="show-art">${b.art || ''}</div>
+        ${b.big ? `<h1 class="show-big">${words(b.big, b.foil)}</h1>` : ''}${b.vo ? `<p class="show-cap">${esc(b.vo)}</p>` : ''}`;
+      dots.forEach((d, i) => d.classList.toggle('on', i <= k));
+      const sound = sfx[b.sound || 'slam'];
+      if (sound) sound(b.soundFor);
+      if (b.party) bigShow();
+    };
+    const play = async from => {
+      const mine = ++run;
+      const live = () => !over && run === mine;
+      let i = from;
+      while (i < beats.length && live()) {
+        if (!beats[i].vo) { show(i); await waitMs(beats[i].hold || 2500); i += 1; continue; }
+        let j = i;
+        while (j < beats.length && beats[j].vo) j += 1;       // a run of spoken beats is one reading
+        const base = i;
+        show(i);
+        const spoke = await voice.script(beats.slice(i, j).map(b => b.vo), k => { if (live()) show(base + k); });
+        if (!live()) return;
+        if (spoke) { show(j - 1); await waitMs(900); }
+        else for (let k = Math.max(at, base); k < j && live(); k++) { show(k); await waitMs(voice.guess(beats[k].vo)); }   // no voice: read the captions
+        i = j;
+      }
+      if (live()) finish();
+    };
+    el.addEventListener('click', e => {
+      const act = e.target.closest('[data-show]');
+      if (!act) return;
+      if (act.dataset.show === 'skip' || at + 1 >= beats.length) { finish(); return; }
+      voice.stop();            // moving on by hand: the announcer picks up from the next beat
+      play(at + 1);
+    });
+    showing = { finish };
+    play(0);
+  }
+
   function introBeats() {
     const named = re => state.players.filter(p => re.test(p.name)).map(p => p.name);
     const lola = named(/^lola\b/i)[0], titas = named(/^tita\b/i), titos = named(/^tito\b/i);
@@ -1494,7 +1592,7 @@
     return [
       { kicker: 'Live from the Rivera sala', big: lola ? `Mga Tito. Mga Tita. At si ${lola}.` : 'Mga Tito. Mga Tita. Mga pamangkin.', art: '<div class="on-air">On air</div>',
         vo: `Ladies and gentlemen. Mga Tito. Mga Tita. ${lola ? `And the one and only, ${lola}.` : 'And all the cousins in the back.'} Please put down your plates. This is important.` },
-      { kicker: 'Welcome to', big: '', art: logoHTML(), fanfare: true,
+      { kicker: 'Welcome to', art: logoHTML(), sound: 'fanfare',
         vo: 'Welcome... to Rivera Royale! The only game show in the world filmed entirely in this living room.' },
       { kicker: 'Brought to you by', big: 'Rafael “RJ” Rivera', art: '<div class="medal">RJ</div>',
         vo: 'Tonight is brought to you by Rafael. Yes, that Rafael. You know him as RJ. He prepared a little something this year. And no... it is not another fruit salad.' },
@@ -1510,71 +1608,73 @@
         vo: 'On the last die, one side is worth one thousand pesos. And one side is worth exactly zero. We do not talk about that side.' },
       { kicker: 'And one side opens', big: 'The roulette', art: `<div class="forever">${wheelSVG(WHEEL, 0, null)}</div>`,
         vo: `And one side opens the roulette. More cash... or the jackpot. But every prize on that wheel can only be won once. So the early birds get the worm. Sorry, ${tito}.` },
-      { kicker: 'Lowest roll of the night?', big: 'Don’t cry yet.', art: `<div class="bagbig">${ICON_BAG}</div>`,
-        vo: 'And if you finish with the lowest roll of the night... do not cry yet. RJ has one more surprise, just for you.' },
-      { kicker: 'House rules', big: 'No take-backs. No crying. No utang.', art: '',
+      { kicker: 'House rules', big: 'No take-backs. No crying. No utang.',
         vo: 'House rules. No take-backs. No crying. And no, you cannot pay your utang with your winnings. Okay... maybe you can.' },
-      { kicker: 'Phones down. Prayers up.', big: 'Let’s play!', art: logoHTML(), fanfare: true,
+      { kicker: 'Phones down. Prayers up.', big: 'Let’s play!', art: logoHTML(), sound: 'fanfare',
         vo: 'So. Phones down. Prayers up. Let’s play... Rivera Royale!' },
     ];
   }
-
   function startIntro() {
-    if (intro) return;
-    const beats = introBeats();
-    const el = document.createElement('div');
-    el.className = 'show';
-    el.setAttribute('role', 'dialog');
-    el.setAttribute('aria-label', 'Rivera Royale show intro');
-    el.innerHTML = `<div class="show-rays"></div><div class="show-stage"></div>
-      <div class="show-foot"><span class="show-dots">${beats.map(() => '<i></i>').join('')}</span>
-        <span class="show-acts"><button class="btn quiet" type="button" data-show="next">Next</button><button class="btn quiet" type="button" data-show="skip">Skip the intro</button></span></div>`;
-    document.body.appendChild(el);
-    const stage = el.querySelector('.show-stage'), dots = [...el.querySelectorAll('.show-dots i')];
-    let at = -1, timer = 0, voiced = false, over = false;
-
-    const finish = () => {
-      if (over) return;
-      over = true;
-      clearTimeout(timer);
-      voice.stop();
-      el.remove();
-      intro = null;
+    playShow(introBeats(), 'Rivera Royale show intro', () => {
       introSeen = true;
       store.set(LS_INTRO, '1');
       go({ name: 'home' });
-    };
-    const arm = () => {
-      clearTimeout(timer);
-      // With a voice, the next line's start moves the show on; this is only the safety net.
-      const wait = voice.guess(beats[at].vo) + (voiced ? 9000 : 0);
-      timer = setTimeout(() => (at + 1 < beats.length ? show(at + 1) : finish()), wait);
-    };
-    const show = k => {
-      if (over || k <= at || k >= beats.length) return;
-      at = k;
-      const b = beats[k];
-      stage.innerHTML = `<p class="show-kicker">${esc(b.kicker)}</p><div class="show-art">${b.art}</div>
-        ${b.big ? `<h1 class="show-big">${words(b.big)}</h1>` : ''}<p class="show-cap">${esc(b.vo)}</p>`;
-      dots.forEach((d, i) => d.classList.toggle('on', i <= k));
-      if (b.fanfare) sfx.fanfare(); else sfx.slam();
-      arm();
-    };
-    el.addEventListener('click', e => {
-      const act = e.target.closest('[data-show]');
-      if (!act) return;
-      if (act.dataset.show === 'skip') { finish(); return; }
-      // Moving on by hand: the voice can't jump ahead, so it bows out and the captions carry on.
-      if (voiced) { voice.stop(); voiced = false; }
-      if (at + 1 < beats.length) show(at + 1); else finish();
     });
+  }
 
-    intro = { finish };
-    show(0);
-    voice.script(beats.map(b => b.vo), k => { voiced = true; if (k > at) show(k); else arm(); }).then(spoke => {
-      if (over) return;
-      if (spoke) { clearTimeout(timer); timer = setTimeout(finish, 1400); }
-      else if (voiced) { voiced = false; arm(); }
+  /* The ending: a winner and the credits, as if that were all. Then the lights go out, and the
+     lowest roller of the night is called up for a surprise nobody was told about. */
+  function endingBeats() {
+    const P = state.players, f = state.finale;
+    const done = P.filter(p => p.status !== 'waiting').sort((a, b) => worth(b) - worth(a) || a.at - b.at);
+    const topAmt = done.length ? worth(done[0]) : 0;
+    const tops = done.filter(p => worth(p) === topAmt).map(p => p.name);
+    const given = done.reduce((sum, p) => sum + worth(p), 0);
+    const bill = `<div class="bill"><small>Pamasko</small>${peso(STAKE)}</div>`;
+    const cr = (role, who) => `<p class="cr"><small>${esc(role)}</small>${[].concat(who).map(w => `<b>${esc(w)}</b>`).join('')}</p>`;
+    const credits = `<div class="credits"><div class="credits-roll">${logoHTML()}
+      ${cr('Created and hosted by', 'Rafael “RJ” Rivera')}${cr('Executive producer', 'RJ')}${cr('Head of finance', 'RJ’s wallet')}
+      ${cr('Starring', P.map(p => p.name))}
+      ${cr('Dice wrangler', 'Kapalaran')}${cr('Wheel operator', 'Swerte')}${cr('Catering', 'Whoever cooked. Salamat po!')}${cr('Built with', 'Claude')}
+      <p class="cr"><small>No Titos or Titas were harmed in the making of this show</small></p>
+      ${cr('Maligayang Pasko', String(new Date().getFullYear()))}</div></div>`;
+    const beats = [
+      { kicker: 'That’s the show', big: 'Tonight’s big winner is…', sound: 'drumroll', soundFor: 1800,
+        vo: 'And that is our show, everybody! But before we go... tonight’s big winner is...' },
+      { kicker: 'Tonight’s big winner', big: list(tops), foil: true, art: `<div class="winner">${CROWN}<span>${peso(topAmt)}</span></div>`, sound: 'fanfare', party: true,
+        vo: `${list(tops)}! With ${num(topAmt)} pesos!` },
+      { kicker: 'Tonight RJ gave away', big: peso(given), foil: true, art: `<div class="fan">${bill}${bill}${bill}</div>`,
+        vo: `Tonight, RJ gave away ${num(given)} pesos. Please clap. He will be eating instant noodles until February.` },
+      { kicker: 'From all of us at Rivera Royale', big: 'Maligayang Pasko!', art: logoHTML(), sound: 'fanfare',
+        vo: 'From all of us at Rivera Royale... Maligayang Pasko! Good night, everybody!' },
+      { html: credits, hold: 16500, sound: 'jackpot' },
+    ];
+    const tied = f.pending ? f.pending.ids.map(player).filter(Boolean) : null;
+    const low = tied ? tied[0] : player(f.picked[0]);
+    if (!low) return beats;       // nobody rolled, so there is nothing more to reveal
+    beats.push(
+      { dark: true, html: '<span></span>', hold: 3000, sound: 'none' },
+      { dark: true, cls: 'flicker', big: 'But wait…', sound: 'rumble', vo: 'But wait.' },
+      { dark: true, kicker: 'Did you think RJ was done?', big: 'There’s one more.', foil: true, art: `<div class="bagbig">${ICON_BAG}</div>`,
+        vo: 'Did you really think RJ was done? There is one more thing.' },
+      { dark: true, kicker: 'Somebody in this room', big: 'Had the worst luck tonight.', art: `<div class="flats"><div class="flat zero"><span>${peso(0)}</span></div></div>`,
+        vo: 'Somebody in this room had the worst luck of the night. The lowest roll. The saddest dice.' },
+      { dark: true, kicker: 'The lowest roll of the night', big: 'Belongs to…', sound: 'drumroll', soundFor: 2400,
+        vo: 'The lowest roll of the night belongs to...' },
+      tied
+        ? { dark: true, kicker: `${peso(low.total)} each`, big: 'It’s a tie!', foil: true, sound: 'fanfare',
+            vo: `A tie! ${list(tied.map(p => p.name))}, with ${num(low.total)} pesos each. One die each. The lowest roll steps into the spotlight.` }
+        : { dark: true, kicker: peso(low.total), big: low.name, foil: true, sound: 'fanfare', party: true,
+            vo: `${low.name}! With ${num(low.total)} pesos.` }
+    );
+    return beats;
+  }
+  function startEnding() {
+    if (!state.finale || state.finale.stage === 'revealed') return;
+    playShow(endingBeats(), 'The end of the show', () => {
+      commit(s => { if (s.finale) s.finale.stage = 'revealed'; });
+      go({ name: 'finale' });
+      setTimeout(announceOffer, 700);
     });
   }
 
@@ -1792,7 +1892,7 @@
     else f.pending = { ids: group.map(p => p.id), slots: 1 };
   }
   function startFinale(s) {
-    s.finale = { slots: 0, picked: [], pending: null, rounds: [], decisions: {} };
+    s.finale = { stage: 'credits', slots: 0, picked: [], pending: null, rounds: [], decisions: {} };
     pickLowest(s);
   }
 
@@ -1942,10 +2042,11 @@
       go({ name: 'home' });
     },
     'start-finale'() {
-      if (state.finale || !bagPool(state).length) return;
-      if (commit(startFinale)) { go({ name: 'finale' }); sfx.drumroll(900); setTimeout(announceOffer, 500); }
+      if (state.finale || !state.players.some(p => p.status !== 'waiting')) return;
+      if (commit(startFinale)) { go({ name: 'finale' }); startEnding(); }
     },
-    finale() { go({ name: 'finale' }); },
+    finale() { go({ name: 'finale' }); startEnding(); },
+    credits() { startEnding(); },
     'undo-finale'() { commit(s => { s.finale = null; }); render(); },
     'roll-off'() {
       if (!state.finale || !state.finale.pending) return;
@@ -1954,7 +2055,10 @@
     'offer-next'() {
       const f = state.finale;
       if (!f || f.pending || f.slots >= 2 || !bagPool(state).length) return;
-      if (commit(pickLowest)) { render(); setTimeout(announceOffer, 300); }
+      if (!commit(pickLowest)) return;
+      render();
+      banner('And one more…', 'Nobody won the roulette Jackpot', 2000);
+      voice.say(lines.oneMore()).then(spoke => setTimeout(announceOffer, spoke ? 300 : 2300));
     },
     decide(el) {
       const { id, choice } = el.dataset;

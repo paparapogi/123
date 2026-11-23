@@ -17,9 +17,12 @@ Each person is called up and asked one question: **Pera o Kapalaran?**
 ₱500, ₱1,000 or the Jackpot (a Mystery Bag). Each prize can be won once; after that it is off the
 wheel for everyone else.
 
-**Finale.** When everyone has played, the lowest roller (who doesn't already hold a Mystery Bag) is
-asked to keep their winnings or hand them back for a Mystery Bag. A tie is settled by a roll-off.
-If nobody won the roulette Jackpot, the host can offer that bag to the next lowest roller.
+**The ending (a surprise).** Nothing on screen mentions a prize for the lowest roller until the
+show is over. When the host taps **End the show**, the game names the big winner and rolls the
+credits as if that were all. Then the screen goes dark: "But wait… there's one more." The lowest
+roller (who doesn't already hold a Mystery Bag) is called up and asked to keep their winnings or
+hand them back for a Mystery Bag. A tie is settled by a roll-off. If nobody won the roulette
+Jackpot, the host can then offer that bag to the next lowest roller.
 
 A roll pays ₱70 to ₱1,150 in cash, about ₱342 on average. The dice and the wheel are drawn fairly,
 and each result is fixed and saved the instant the dice are let go; the tumble and the spin only
@@ -30,12 +33,12 @@ reveal it.
 1. Open the game, add everyone's name, and tap **Start the show** for the intro.
 2. Tap a name (or **Pick someone for me**) to call that person up, then tap Pera or Kapalaran.
 3. On the dice stage, tap anywhere to throw, or hold the screen to shake first.
-4. When everyone is done, tap **Reveal the lowest roller**.
+4. When everyone is done, tap **End the show** and let the ending play.
 
-**Host tools** at the bottom of the lobby shows what to pay out and who holds each Mystery Bag,
-lets you pick and test the announcer's voice, replay the intro, redo or remove a turn, undo the
-finale, clear all results while keeping the names (use that after a practice round), or erase
-everything.
+**Host tools** at the bottom of the lobby shows what to pay out, lets you pick and test the
+announcer's voice, replay the intro, redo or remove a turn, undo the ending, clear all results
+while keeping the names (use that after a practice round), or erase everything. It only shows who
+got the lowest-roller bag after the surprise has been revealed.
 
 **Voiceover.** The announcer speaks in a Claude voice when the page is opened as a Claude artifact
 in a Chromium browser such as Chrome. Elsewhere it uses the device's built-in voice where there is
