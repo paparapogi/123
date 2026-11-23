@@ -247,6 +247,11 @@
   .chip.wheelchip { background: var(--violet); }
   .chip.star { background: var(--gold); color: var(--ink); }
   .chip.times { background: var(--green); }
+  .chip.keep { background: var(--ivory); color: var(--ink); }
+  .perk { display: flex; align-items: center; gap: .5rem; margin: 0; font-weight: 800; color: var(--gold-light); }
+  .perk svg { width: 1.1em; height: 1.1em; flex: none; }
+  .perk b { color: var(--ivory); text-transform: uppercase; letter-spacing: .06em; }
+  .pick .perk { justify-content: center; font-size: 1.15rem; }
   .amt { display: flex; flex-direction: column; align-items: flex-end; gap: .2rem; font: 400 1.6rem/1 var(--display); letter-spacing: .02em; font-variant-numeric: tabular-nums; text-align: right; }
   .amt.up { color: var(--gold); }
   .amt small { font: 800 .72rem/1 var(--body); letter-spacing: .04em; color: var(--gold); white-space: nowrap; }
@@ -288,6 +293,10 @@
   .door-art { min-height: 6.2rem; display: flex; align-items: center; justify-content: center; gap: .5rem; }
   .door p { max-width: 22em; }
   .door .btn { margin-top: auto; }
+  .door.got { border-color: rgba(242, 192, 74, .55); }
+  .door-tag { margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-height: 3.4rem; padding: .5rem 1.2rem; border-radius: 999px;
+    border: 2px solid var(--gold); color: var(--gold-light); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .door-tag svg { width: 1.1em; height: 1.1em; }
   .bill {
     position: relative; font-size: clamp(2.2rem, 11vmin, 3.3rem); width: 5.2em; aspect-ratio: 2.25; flex: none;
     display: grid; place-items: center; border-radius: .18em; transform: rotate(-3deg);
@@ -624,6 +633,9 @@
   .ctl-pick.fate { background: linear-gradient(180deg, var(--gold-light) -40%, var(--gold) 55%); color: var(--ink); border-color: transparent; box-shadow: 0 .3rem 0 var(--gold-deep); }
   .ctl-pick.fate span { color: var(--ink); opacity: .75; }
   .ctl-pick:active { transform: translateY(.18rem); }
+  .ctl-pick.got { border-style: dashed; border-color: var(--gold); cursor: default; }
+  .ctl-pick.got:active { transform: none; }
+  .ctl-pick.got b { color: var(--gold-light); }
   .ctl-pick.armed, .ctl-pick.fate.armed { background: var(--ruby); color: #fff; border-color: transparent; box-shadow: 0 .3rem 0 var(--ruby-deep); }
   .ctl-pick.armed b { font-size: clamp(1.8rem, 9.5vmin, 3.4rem); }
   .ctl-pick.armed span { color: #fff; opacity: .9; }
@@ -777,6 +789,10 @@
   const worth = p => p.status === 'kept' ? STAKE : p.total;
   const tookBag = p => !!state.finale && state.finale.decisions[p.id] === 'bag';
   const wonBag = p => !!p.wheel && p.wheel.won === BAGWIN;
+  /** The first player of the night keeps the cash and rolls as well. True while nobody has played yet. */
+  const firstUp = s => !s.finale && s.players.length > 0 && s.players.every(p => p.status === 'waiting');
+  const bonusOf = p => p.bonus || 0;               // the first player's cash, kept on top of the roll
+  const rollPay = p => p.total - bonusOf(p);       // what the dice and the roulette paid by themselves
   const isStar = (p, i) => !!p.faces && p.faces[i] === STAR;
   const current = p => p.r === RULES;   // played under the dice as they are now
 
@@ -1170,24 +1186,31 @@
   // What the announcer says. Short, warm, a little cheeky.
   const lines = {
     pickOpen: first => first
-      ? oneOf(['Who goes first? Spin the wheel.', 'Let’s find our first player. Spin it!'])
+      ? oneOf(['Who goes first? Tonight, the first player keeps the three hundred... and rolls for free. Spin the wheel!',
+        'Let’s find our first player. Whoever it is keeps the three hundred, and rolls anyway. Spin it!'])
       : oneOf(['Who’s next? Spin the wheel.', 'Let’s see who’s up next. Spin it!', 'Next player. The wheel decides.']),
+    turnFirst: n => oneOf([`${n}! You go first. So for you, no question. Pera... AT kapalaran! Keep the three hundred, and roll for free.`,
+      `${n} goes first! And the first player gets both. Pera... AT kapalaran! The three hundred is yours. Now roll.`]),
+    fateFree: n => oneOf([`A free roll for ${n}. Nothing to lose. Give those dice a good shake.`, `Free roll! No pressure at all, ${n}. Okay... a little pressure.`]),
+    plus: p => (p.bonus ? ` Plus the ${num(p.bonus)} you already had. That's ${num(p.total)} pesos in all!` : ''),
     turn: n => oneOf([`${n}! Pera... o kapalaran?`, `${n}, come on down! Pera... o kapalaran?`, `Next up, ${n}. One question. Pera... o kapalaran?`]),
     pera: n => oneOf([`Pera! Smart. Boring... but smart. RJ, three hundred pesos for ${n}, please.`, `${n} takes the money and runs! Three hundred pesos. RJ, pay up.`, `Pera it is. Three hundred pesos, safe and sound. Wise choice, ${n}.`]),
     fate: n => oneOf([`Kapalaran! Brave. Let's see what fate thinks of ${n}.`, `Kapalaran! Give those dice a good shake, ${n}.`, `Kapalaran it is! No take-backs now.`]),
-    result(p) {
-      const n = p.name, t = num(p.total);
+    result: p => lines.rolled(p) + lines.plus(p),
+    wheel: p => lines.wheeled(p) + lines.plus(p),
+    rolled(p) {
+      const n = p.name, pay = rollPay(p), t = num(pay);
       if (isStar(p, 2)) return oneOf([`One thousand pesos! ${n} takes home ${t} pesos! RJ... are you okay?`, `The thousand! ${t} pesos for ${n}! Somebody check on RJ's wallet.`]);
       if (timesOf(p.dice[2]) === 2) return oneOf([`Times two! Double! ${t} pesos for ${n}.`, `The last die says times two. ${n} doubles up to ${t} pesos!`]);
       if (timesOf(p.dice[2])) return oneOf([`Times three! Triple! ${t} pesos for ${n}!`, `Times three on the last die! ${n} takes home ${t} pesos!`]);
       if (p.dice[2] === 0) return oneOf([`Ooh. The last die says zero. ${t} pesos for ${n}. We still love you.`, `Zero on the last die. ${n} takes home ${t} pesos. It's the thought that counts.`]);
-      if (p.total >= 200) return oneOf([`${t} pesos! Not bad at all, ${n}.`, `${t} pesos for ${n}. That's a very respectable roll.`]);
-      if (p.total >= 130) return oneOf([`${t} pesos for ${n}. Enough for merienda.`, `${n} takes home ${t} pesos. Could be worse.`]);
+      if (pay >= 200) return oneOf([`${t} pesos! Not bad at all, ${n}.`, `${t} pesos for ${n}. That's a very respectable roll.`]);
+      if (pay >= 130) return oneOf([`${t} pesos for ${n}. Enough for merienda.`, `${n} takes home ${t} pesos. Could be worse.`]);
       return oneOf([`${t} pesos. Well... kapalaran has spoken, ${n}.`, `${n} takes home ${t} pesos. Don't spend it all in one place.`]);
     },
     wheelOpen: n => oneOf([`Roulette! ${n}, step up and spin the wheel.`, `It's the roulette! Only good things on this wheel. Spin it, ${n}.`]),
-    wheel(p) {
-      const n = p.name, t = num(p.total), w = p.wheel.won, x = timesOf(w);
+    wheeled(p) {
+      const n = p.name, t = num(rollPay(p)), w = p.wheel.won, x = timesOf(w);
       if (w === BAGWIN) return `Jackpot! ${n} wins the Mystery Bag! Nobody knows what's inside... except RJ.`;
       if (x) return `Times ${['', '', 'two', 'three', 'four', 'five'][x] || x}! That makes ${t} pesos for ${n}!`;
       return `${num(w)} pesos from the wheel! ${n} takes home ${t} pesos!`;
@@ -1409,6 +1432,7 @@
         : (!waiting.length ? '<p class="note">Everyone on the list has played. Add a name if someone’s missing.</p>' : '');
       const spinNext = waiting.length
         ? `<div class="spin-next"><button class="btn primary big" data-action="pick"${dis}>${waiting.length > 1 ? (done.length ? 'Spin for the next player' : 'Spin for the first player') : `Last up: ${esc(waiting[0].name)}`}</button>
+            ${done.length ? '' : perkHTML()}
             ${waiting.length > 1 ? '<p class="fine">The wheel decides the order, so everyone has the same chance at the roulette prizes.</p>' : ''}</div>` : '';
       next = `${spinNext}${chips ? `<div class="chips">${chips}</div>` : ''}${hint}
         <form id="add-form" class="add" novalidate>
@@ -1420,7 +1444,7 @@
     }
 
     const rows = done.map((p, i) => {
-      const how = p.status === 'kept' ? `<span class="how">Pera. Took the ${peso(STAKE)}</span>` : `<span class="how">${resultChips(p)}</span>`;
+      const how = p.status === 'kept' ? `<span class="how">Pera. Took the ${peso(STAKE)}</span>` : `<span class="how">${p.bonus ? `<span class="chip keep">Kept ${peso(p.bonus)}</span>` : ''}${resultChips(p)}</span>`;
       let amt;
       if (tookBag(p)) amt = `<span class="amt up"><s>${peso(p.total)}</s><small>Mystery Bag</small></span>`;
       else amt = `<span class="amt${worth(p) > STAKE ? ' up' : ''}">${peso(worth(p))}${wonBag(p) ? '<small>+ Mystery Bag</small>' : ''}</span>`;
@@ -1456,7 +1480,7 @@
     const jackpotBy = rolled.find(wonBag);
     const swapped = rolled.filter(tookBag);
     const manage = P.map(p => {
-      const what = p.status === 'waiting' ? 'Hasn’t played' : p.status === 'kept' ? `Took the ${peso(STAKE)}` : `Rolled ${peso(p.total)}${wonBag(p) ? ' + Mystery Bag' : ''}`;
+      const what = p.status === 'waiting' ? 'Hasn’t played' : p.status === 'kept' ? `Took the ${peso(STAKE)}` : `${p.bonus ? `First up: kept ${peso(p.bonus)}, rolled ${peso(rollPay(p))}. Pay ${peso(p.total)}` : `Rolled ${peso(p.total)}`}${wonBag(p) ? ' + Mystery Bag' : ''}`;
       const lock = f || locked ? ' disabled' : '';
       return `<li><span class="m-name"><b>${esc(p.name)}</b><small>${what}</small></span><span class="m-acts">
         ${p.status !== 'waiting' ? `<button class="btn quiet" data-action="redo" data-id="${p.id}" data-confirm="Tap again to clear this turn"${lock}>Redo turn</button>` : `<button class="btn quiet" data-action="turn" data-id="${p.id}"${lock}>Call up</button>`}
@@ -1530,12 +1554,16 @@
       ${host}`;
   }
 
+  /** What the first player of the night gets. */
+  const perkHTML = () => `<p class="perk">${STAR_ICON}<span>First player keeps the ${peso(STAKE)} <b>and</b> rolls for free.</span></p>`;
+
   function viewPick() {
     const waiting = state.players.filter(p => p.status === 'waiting');
     const first = waiting.length === state.players.length;       // nobody has played yet
     return `<section class="pick">
       <button class="back" data-action="home">‹ The record</button>
       <h1>${first ? 'Who goes first?' : 'Who’s next?'}</h1>
+      ${first ? perkHTML() : ''}
       <div class="wheel ready" data-action="pick-spin">${nameWheelSVG(waiting.map(p => p.name), 0)}</div>
       ${phoneOn() ? '<p class="hint">Swing the phone down to spin.</p><button class="btn ghost" data-action="pick-spin">Or spin from this screen</button>' : '<button class="btn primary big" data-action="pick-spin">Spin the wheel</button>'}
       <p class="fine">${waiting.length} still to play. Every name has the same chance.</p>
@@ -1543,6 +1571,29 @@
   }
 
   function viewChoice(p) {
+    if (firstUp(state)) return `<section class="choice is-free">
+      <button class="back" data-action="home">‹ Not my turn</button>
+      <div class="ask">
+        <h1 class="ask-name foil slam">${esc(p.name)}</h1>
+        <p class="ask-q"><span class="slam" style="--i:4">Pera</span><i class="slam" style="--i:6">at</i><span class="slam foil" style="--i:8">Kapalaran!</span></p>
+        <p class="hint via-note">First player: keep the ${peso(STAKE)} and roll for free.${phoneOn() ? ' The dice are on the phone.' : ''}</p>
+      </div>
+      <div class="doors">
+        <div class="door got">
+          <div class="door-art"><div class="bill" aria-hidden="true"><small>Pamasko</small>${peso(STAKE)}</div></div>
+          <h2>Pera</h2>
+          <p>${peso(STAKE)} cash. Yours, whatever the dice say.</p>
+          <span class="door-tag">${STAR_ICON}Already yours</span>
+        </div>
+        <div class="door fate">
+          <div class="door-art" aria-hidden="true">${DICE.map((d, i) => dieHTML(i, null, 'mini')).join('')}</div>
+          <h2 class="foil">Kapalaran</h2>
+          <p>And a free roll on top: three dice for ${peso(MIN_TOTAL)} to ${peso(MAX_TOTAL)} more.</p>
+          <button class="btn primary big wide" data-action="to-roll" data-id="${p.id}">Roll for free</button>
+        </div>
+      </div>
+      <details class="sides-info"${ui.sidesOpen ? ' open' : ''}><summary>What’s on the dice?</summary>${legendHTML()}</details>
+    </section>`;
     return `<section class="choice">
       <button class="back" data-action="home">‹ Not my turn</button>
       <div class="ask">
@@ -1584,11 +1635,12 @@
     if (stars === 1) return 'One star side.';
     return 'No star sides this time.';
   }
-  const isBig = p => wonBag(p) || p.total >= 500;
+  const isBig = p => wonBag(p) || rollPay(p) >= 500;
 
   function resultHTML(p) {
     const two = `${peso(p.dice[0])} + ${peso(p.dice[1])}`, t = p.wheel ? p.wheel.won : p.dice[2], from = p.wheel ? ' from the roulette' : '';
-    const sum = timesOf(t) ? `(${two}) × ${timesOf(t)}${from}` : `${two} + ${t === BAGWIN ? 'the Jackpot' : peso(cashOf(t))}${from}`;
+    const kept = p.bonus ? `${peso(p.bonus)} kept + ` : '';
+    const sum = kept + (timesOf(t) ? `(${two}) × ${timesOf(t)}${from}` : `${two} + ${t === BAGWIN ? 'the Jackpot' : peso(cashOf(t))}${from}`);
     return `<div class="result" aria-live="polite">
       <p class="sum">${sum}</p>
       <p class="verdict${isBig(p) ? ' big foil' : ''}">${verdict(p)}</p>
@@ -1610,18 +1662,19 @@
         ${resultHTML(p)}
       </section>`;
     }
-    const viaPhone = phoneOn();
+    const viaPhone = phoneOn(), free = !again && firstUp(state);     // the first player rolls without giving anything up
     return `<section class="roll is-ready${viaPhone ? ' via-phone' : ''}" data-action="roll">
       ${again ? '' : `<button class="back" data-action="turn" data-id="${p.id}">‹ Changed my mind</button>`}
       <h1>${esc(p.name)}</h1>
       <div class="score">${again
         ? '<span class="score-label">the roulette says</span><span class="total-amt words foil">Roll again!</span>'
+        : free ? `<span class="score-label">already yours</span><span class="total-amt foil">${peso(STAKE)}</span>`
         : `<span class="score-label">giving up</span><span class="total-amt stake">${peso(STAKE)}</span>`}</div>
       <div class="tray">${DICE.map((d, i) => dieHTML(i, null)).join('')}${viaPhone ? `<div class="in-phone">${ICON_PHONE}<b>The dice are in the phone</b></div>` : ''}</div>
       <div class="roll-cta">
         <p class="hint">${viaPhone ? 'Shake the phone, then throw at the screen.' : 'Tap anywhere to roll. Hold to shake first.'}</p>
         <button class="btn ${viaPhone ? 'ghost' : 'primary'}" data-action="roll">${viaPhone ? 'Or roll from this screen' : again ? 'Roll again' : 'Roll the dice'}</button>
-        <p class="fine">${again ? 'This roll is the one that counts.' : 'No take-backs once the dice are out.'}</p>
+        <p class="fine">${again ? 'This roll is the one that counts.' : free ? `A free roll. The ${peso(STAKE)} stays yours.` : 'No take-backs once the dice are out.'}</p>
       </div>
     </section>`;
   }
@@ -1959,7 +2012,8 @@
     const still = reduceMotion();
     // When each die comes to rest. The third stops on an edge first, then tips over.
     const T = still ? [200, 500, 900] : [1300, 2100, 3300];
-    let shown = 0;
+    const kept = bonusOf(p), base = R.dice[0] + R.dice[1];
+    let shown = kept;              // the first player's cash is already on the board
 
     const viaPhone = root.classList.contains('via-phone');
     const boost = Math.round(throwPower * 2);     // a harder throw from the phone spins the dice more
@@ -1976,7 +2030,7 @@
     label.textContent = 'so far';
     amt.classList.remove('stake', 'words');
     amt.classList.add('foil');
-    amt.textContent = peso(0);
+    amt.textContent = peso(kept);
     if (!still) { sfx.whoosh(); rattle(T[1]); }
     buzz(40);
 
@@ -2013,11 +2067,11 @@
         sfx.bust(); buzz(140);
         countTo(amt, shown, p.total, 0, () => closeTurn(false));
       } else if (times) {
-        banner(`×${times}!`, `${peso(shown)} becomes ${peso(p.total)}`, 1600);
+        banner(`×${times}!`, `${peso(base)} becomes ${peso(base * times)}`, 1600);
         sfx.star(); buzz([40, 40, 140]); fx.at(tray, { n: 80, power: 15 });
         countTo(amt, shown, p.total, 1000, () => closeTurn(false));
       } else {
-        if (star(0) || star(1) || p.total >= 200) { sfx.star(); fx.at(tray, { n: 60, power: 14 }); }
+        if (star(0) || star(1) || rollPay(p) >= 200) { sfx.star(); fx.at(tray, { n: 60, power: 14 }); }
         countTo(amt, shown, p.total, 500, () => closeTurn(false));
       }
     };
@@ -2083,7 +2137,7 @@
      Every spin was drawn and saved with the dice; the wheel only reveals it. "Spin again" brings
      up the wheel once more, and "Roll again" hands the dice back for the roll that counts. */
   function openWheel(p, k, j, root, holder, amt, label, soFar, closeTurn) {
-    const R = p.rolls[k], sp = R.spins[j], still = reduceMotion();
+    const R = p.rolls[k], sp = R.spins[j], still = reduceMotion(), base = R.dice[0] + R.dice[1];
     if (!j) {
       banner('Roulette!', `${p.name}, spin the wheel`, 1500);
       sfx.fanfare(); buzz([40, 40, 40]);
@@ -2119,8 +2173,8 @@
         }
         label.textContent = 'takes home';
         setTimeout(() => voice.say(lines.wheel(p)), 500);
-        if (times) banner(`×${times}!`, `${peso(soFar)} becomes ${peso(p.total)}`, 1700);
-        if (w === BAGWIN || p.total >= 500) {
+        if (times) banner(`×${times}!`, `${peso(base)} becomes ${peso(base * times)}`, 1700);
+        if (w === BAGWIN || rollPay(p) >= 500) {
           root.classList.add('is-jackpot');
           sfx.jackpot(); buzz([60, 40, 60, 40, 220]); bigShow();
           if (w === BAGWIN) { banner('Jackpot!', 'The Mystery Bag', 1900); amt.insertAdjacentHTML('afterend', '<span class="total-plus">+ the Mystery Bag</span>'); }
@@ -2379,7 +2433,7 @@
     const amount = who && (stage === 'result' || stage === 'offer') ? who.total : null;
     const msg = { t: 'stage', stage, name: who ? who.name : '', total: amount, bag: stage === 'result' && wonBag(who),
       left: waiting.length, last: waiting.length === 1 ? waiting[0].name : '', first: !f && waiting.length === state.players.length,
-      again: stage === 'ready' && !!ui.pending };
+      again: stage === 'ready' && !!ui.pending, free: (stage === 'choice' || stage === 'ready') && firstUp(state) };
     const key = JSON.stringify(msg);
     if (!force && key === lastTold) return;
     lastTold = key;
@@ -2436,7 +2490,7 @@
     const el = document.createElement('main');
     el.className = 'ctl';
     $app.appendChild(el);
-    let stage = { stage: 'lobby', name: '', total: null, bag: false, left: 0, last: '', first: false, again: false };
+    let stage = { stage: 'lobby', name: '', total: null, bag: false, left: 0, last: '', first: false, again: false, free: false };
     let active = false, thrown = false, sawMotion = false, giveUp = 0, stageAt = 0;
     let armed = '', armedAt = 0, armTimer = 0, note = null, noteTimer = 0;
     let energy = 0, quick = 0, peak = 0, peakAtCalm = 0, work = 0, shakeFrom = 0, calmFrom = 0, lastAt = 0, lastSent = 0, grav = null;
@@ -2454,12 +2508,16 @@
         sub = st === 'failed' ? 'Check that both devices are online. Still trying.' : `Code ${PAIR}`;
       } else if (!active) { big = 'Ready when you are'; sub = 'This phone picks, swings, shakes and throws. The big screen shows it.'; btn = ['activate', 'Start']; }
       else if (note) { kicker = note.kicker || kicker; big = note.big; sub = note.sub; }
-      else if (s.stage === 'choice') {
+      else if (s.stage === 'choice' && s.free) {
+        name = s.name; kicker = 'Pera at Kapalaran!';
+        mid = `<div class="ctl-picks"><div class="ctl-pick cash got"><b>${peso(STAKE)}</b><span>Already yours</span></div><button class="ctl-pick fate" type="button" data-ctl="kapalaran"><b>Free roll</b><span>Keep the ${peso(STAKE)} and roll the dice</span></button></div>`;
+      } else if (s.stage === 'choice') {
         name = s.name; kicker = 'Pera o Kapalaran?';
         mid = `<div class="ctl-picks">${choice('pera', 'Pera', `Take ${peso(STAKE)} cash`, 'cash')}<button class="ctl-pick fate" type="button" data-ctl="kapalaran"><b>Kapalaran</b><span>Roll the dice</span></button></div>`;
       } else if (s.stage === 'ready') {
         name = s.name;
         if (s.again) kicker = 'Roll again!';
+        else if (s.free) kicker = 'Free roll';
         mid = `<div class="ctl-dice">${DICE.map((d, i) => dieHTML(i, null, 'ctl-die')).join('')}</div><div class="ctl-meter"><i></i></div>`;
         big = thrown ? 'Look at the big screen!' : 'Shake… then throw!';
         sub = thrown ? '' : sawMotion ? 'Shake hard, swing toward the big screen, and stop.' : 'If shaking does nothing, use the button.';
@@ -2481,6 +2539,7 @@
       else if (s.left > 0) {
         kicker = s.first ? 'Who goes first?' : 'Who’s next?';
         big = s.left === 1 ? `Last up: ${s.last}` : s.first ? 'First player' : 'Next player';
+        if (s.first) sub = `The first player keeps the ${peso(STAKE)} and rolls for free.`;
         btn = ['pick', s.left === 1 ? `Call ${s.last}` : s.first ? 'Spin for the first player' : 'Spin for the next player'];
       }
       else { big = 'Wait for the host'; sub = 'Nothing to do here just now.'; }
@@ -2659,7 +2718,7 @@
     turn(el) {
       const p = player(el.dataset.id);
       go({ name: 'choice', id: el.dataset.id });
-      if (p && route.name === 'choice') { sfx.slam(); voice.say(lines.turn(p.name)); }
+      if (p && route.name === 'choice') { sfx.slam(); voice.say(firstUp(state) ? lines.turnFirst(p.name) : lines.turn(p.name)); }
     },
     // Who goes next is left to a wheel of the waiting names.
     pick() {
@@ -2693,12 +2752,13 @@
     },
     'to-roll'(el) {
       const p = player(el.dataset.id);
-      if (p) { banner('Kapalaran!', null, 950); voice.say(lines.fate(p.name)); }
+      if (p && firstUp(state)) { banner('Free roll!', `${p.name} keeps the ${peso(STAKE)} too`, 1300); voice.say(lines.fateFree(p.name)); }
+      else if (p) { banner('Kapalaran!', null, 950); voice.say(lines.fate(p.name)); }
       go({ name: 'roll', id: el.dataset.id });
     },
     keep(el) {
       const id = el.dataset.id, p = player(id);
-      if (!p || p.status !== 'waiting') return;
+      if (!p || p.status !== 'waiting' || firstUp(state)) return;      // the first player isn't asked: they get both
       if (!commit(s => Object.assign(s.players.find(x => x.id === id), { status: 'kept', total: STAKE, at: Date.now(), r: RULES }))) return;
       banner('Pera!', `RJ hands ${p.name} ${peso(STAKE)}`, 2000);
       bell(659.25, 0, 0.4, 0.15); bell(783.99, 0.12, 0.5, 0.15);
@@ -2721,18 +2781,20 @@
       // The whole turn is drawn now: the dice, and whatever the roulette adds if the third die opens it.
       const rolls = drawTurn(state);
       const last = rolls[rolls.length - 1], wheel = last.spins.length ? last.spins[last.spins.length - 1] : null;
-      const total = payOf(last.dice[0] + last.dice[1], wheel ? wheel.won : last.dice[2]);
+      const bonus = firstUp(state) ? STAKE : 0;          // the first player of the night keeps the cash as well
+      const total = bonus + payOf(last.dice[0] + last.dice[1], wheel ? wheel.won : last.dice[2]);
       // Everything is saved the instant the dice are let go; the tumble and the spins only reveal it.
       const saved = commit(s => {
         const q = s.players.find(x => x.id === p.id);
         Object.assign(q, { status: 'rolled', faces: last.faces, dice: last.dice, rolls, total, at: Date.now(), r: RULES });
         if (wheel) q.wheel = wheel; else delete q.wheel;
+        if (bonus) q.bonus = bonus; else delete q.bonus;
       });
       if (saved) playRoll(player(p.id), 0);
     },
     redo(el) {
       const id = el.dataset.id;
-      commit(s => { const p = s.players.find(x => x.id === id); if (p && !s.finale) { Object.assign(p, { status: 'waiting', faces: null, dice: null, total: null }); delete p.wheel; delete p.rolls; delete p.r; } });
+      commit(s => { const p = s.players.find(x => x.id === id); if (p && !s.finale) { Object.assign(p, { status: 'waiting', faces: null, dice: null, total: null }); delete p.wheel; delete p.rolls; delete p.bonus; delete p.r; } });
       render();
     },
     remove(el) {
@@ -2743,7 +2805,7 @@
     'clear-results'() {
       commit(s => {
         s.finale = null;
-        s.players.forEach(p => { Object.assign(p, { status: 'waiting', faces: null, dice: null, total: null }); delete p.wheel; delete p.rolls; delete p.r; });
+        s.players.forEach(p => { Object.assign(p, { status: 'waiting', faces: null, dice: null, total: null }); delete p.wheel; delete p.rolls; delete p.bonus; delete p.r; });
       });
       go({ name: 'home' });
     },

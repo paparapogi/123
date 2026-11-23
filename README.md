@@ -7,6 +7,10 @@ Each person is called up and asked one question: **Pera o Kapalaran?**
 - **Pera**: take the ₱300.
 - **Kapalaran**: leave the ₱300 and roll three dice for whatever they add up to.
 
+**The first player gets both.** Whoever goes first is not asked: they keep the ₱300 *and* roll
+for free ("Pera AT Kapalaran!"). The lobby, the name wheel and the announcer all say so before the
+first spin, so everyone hopes the wheel picks them.
+
 | Die | Its six sides (the last is the gold star side) |
 | --- | --- |
 | 1 | ₱20, ₱25, ₱30, ₱35, ₱40, ₱50 |
@@ -37,7 +41,8 @@ A roll pays ₱70 to ₱1,150 in cash, about ₱407 on average, and beats the �
 time. If all eleven people roll, the night costs about ₱4,500 on average (under ₱6,100 nine nights
 in ten). The dice and the wheel are drawn fairly, and the whole turn, including any extra spin or
 roll, is fixed and saved the instant the dice are first let go; the tumble and the spins only
-reveal it.
+reveal it. The first player's kept ₱300 comes on top of all that: it adds ₱300 to the night if
+that person would have rolled anyway, or about ₱400 if they would have taken Pera.
 
 ## Running the show
 
@@ -45,7 +50,8 @@ reveal it.
 2. Tap **Spin for the first player** (after the first turn it reads **Spin for the next
    player**). A wheel of the waiting names decides who is up, so the order is fair (roulette
    prizes can only be won once, which favours going early). The person it lands on is called up
-   and taps Pera or Kapalaran. Host tools can still call someone up by hand.
+   and taps Pera or Kapalaran; the first one of the night just taps **Roll for free**. Host tools
+   can still call someone up by hand, and whoever plays first that way gets the same bonus.
 3. On the dice stage, tap anywhere to throw, or hold the screen to shake first.
 4. When everyone is done, tap **End the show** and let the ending play.
 
